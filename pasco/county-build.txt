@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/county_build.py", line 82, in <module>
+    main()
+  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/county_build.py", line 73, in main
+    r = build_county(a.county, raw, work, a.site_dir, offline=a.offline)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/county_build.py", line 35, in build_county
+    parcels = adapter.build_parcels(paths)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/counties/pasco.py", line 193, in build_parcels
+    p = p.merge(parcel_centroids(paths["gis"]), on="parcel_id", how="left")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/counties/pasco.py", line 167, in parcel_centroids
+    gdf = gpd.read_file(f"zip://{gis_zip}")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/geopandas/io/file.py", line 322, in _read_file
+    return _read_file_pyogrio(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/geopandas/io/file.py", line 582, in _read_file_pyogrio
+    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pyogrio/geopandas.py", line 382, in read_dataframe
+    result = read_func(
+             ^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pyogrio/raw.py", line 200, in read
+    return ogr_read(
+           ^^^^^^^^^
+  File "pyogrio/_io.pyx", line 1708, in pyogrio._io.ogr_read
+  File "pyogrio/_io.pyx", line 285, in pyogrio._io.ogr_open
+pyogrio.errors.DataSourceError: '/vsizip//home/runner/work/home-offer-analyzer/home-offer-analyzer/raw/pasco/pasco_parcels.zip' not recognized as being in a supported file format.; It might help to specify the correct driver explicitly by prefixing the file path with '<DRIVER>:', e.g. 'CSV:path'.

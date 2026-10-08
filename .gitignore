@@ -9,3 +9,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+
+# County build working files (large; rebuilt each run)
+work/

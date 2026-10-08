@@ -1,0 +1,57 @@
+name: Comps report
+
+# Manual: builds market data and the Pasco comps data from the real downloads,
+# then writes a comps report for the given addresses to the probe-output branch.
+on:
+  workflow_dispatch:
+    inputs:
+      addresses:
+        description: "Addresses, separated by ;"
+        default: "1295 Montgomery Bell Rd, Wesley Chapel, FL 33543"
+
+permissions:
+  contents: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Market data (for the ZIP home value index)
+        run: python -m pipeline.build --archive-dir /tmp/archive-unused
+
+      - name: Pasco county build
+        run: python -u -m pipeline.county_build --county pasco 2>&1 | tee county-build.txt
+
+      - name: Comps report
+        env:
+          ADDRESSES: ${{ inputs.addresses }}
+        run: |
+          IFS=';' read -ra ADDR <<< "$ADDRESSES"
+          python -u -m pipeline.comps_report "${ADDR[@]}" 2>&1 | tee comps-report.txt
+
+      - name: Save to probe-output branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out
+          cp county-build.txt comps-report.txt /tmp/out/ 2>/dev/null || true
+          cp site/data/counties/pasco/*.json /tmp/out/ 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin probe-output || true
+          if git rev-parse --verify origin/probe-output >/dev/null 2>&1; then
+            git checkout -B probe-output origin/probe-output
+          else
+            git checkout --orphan probe-output && git rm -rq --cached .
+          fi
+          mkdir -p pasco
+          cp /tmp/out/* pasco/
+          git add pasco
+          git commit -m "Pasco comps report ($(date -u "+%Y-%m-%d %H:%M"))" || echo "nothing new"
+          git push origin probe-output

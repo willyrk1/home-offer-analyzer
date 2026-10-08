@@ -160,23 +160,55 @@ def load_parcel_info(zip_path: Path) -> pd.DataFrame:
     })
 
 
+def _gis_source(gis_zip: Path, work: Path) -> str:
+    """Path GDAL can open for the parcel layer inside the county's GIS zip.
+
+    Handles a shapefile at the zip root, in a subfolder, or inside a nested zip.
+    """
+    with zipfile.ZipFile(gis_zip) as z:
+        names = z.namelist()
+        shps = [n for n in names if n.lower().endswith(".shp")]
+        if shps:
+            # Prefer a layer whose name mentions parcels; else the largest .shp.
+            shps.sort(key=lambda n: ("parcel" not in n.lower(), -z.getinfo(n).file_size))
+            return f"/vsizip/{gis_zip}/{shps[0]}"
+        inner = [n for n in names if n.lower().endswith(".zip")]
+        if inner:
+            work.mkdir(parents=True, exist_ok=True)
+            target = work / Path(inner[0]).name
+            with z.open(inner[0]) as src, open(target, "wb") as dst:
+                dst.write(src.read())
+            return _gis_source(target, work)
+        gdbs = sorted({n.split(".gdb/")[0] + ".gdb" for n in names if ".gdb/" in n.lower()})
+        if gdbs:
+            return f"/vsizip/{gis_zip}/{gdbs[0]}"
+    raise ValueError(f"No shapefile or geodatabase in {gis_zip.name}: {names[:20]}")
+
+
 def parcel_centroids(gis_zip: Path) -> pd.DataFrame:
     """Center point (lat/lon) of each parcel from the county parcel shapefile."""
-    import geopandas as gpd
+    import pyogrio
 
-    gdf = gpd.read_file(f"zip://{gis_zip}")
+    with open(gis_zip, "rb") as fh:
+        magic = fh.read(4)
+    if magic[:2] != b"PK":
+        raise ValueError(f"{gis_zip.name} is not a zip (starts with {magic!r})")
+    src = _gis_source(gis_zip, gis_zip.parent / "_gis")
+    info = pyogrio.read_info(src)
+    fields = list(info["fields"])
+    sample = pyogrio.read_dataframe(src, read_geometry=False, max_features=300)
     id_col = None
-    for c in gdf.columns:
-        if c == "geometry":
-            continue
-        sample = gdf[c].dropna().astype(str).head(200)
-        if len(sample) and sample.str.match(PARCEL_ID.pattern).mean() > 0.8:
+    for c in fields:
+        vals = sample[c].dropna().astype(str).str.strip()
+        if len(vals) and vals.str.match(PARCEL_ID.pattern).mean() > 0.8:
             id_col = c
             break
     if id_col is None:
-        raise ValueError(f"No parcel-number column found in shapefile: {list(gdf.columns)}")
+        raise ValueError(f"No parcel-number column in {src}: {fields}")
+    gdf = pyogrio.read_dataframe(src, columns=[id_col])
     if gdf.crs is None:
         gdf = gdf.set_crs(2882)  # NAD83 / Florida West (ftUS), used by Pasco
+    gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty]
     pts = gdf.geometry.representative_point().to_crs(4326)
     return pd.DataFrame({"parcel_id": gdf[id_col].astype(str).str.strip(),
                          "lat": pts.y.round(6), "lon": pts.x.round(6)}).drop_duplicates("parcel_id")
@@ -189,14 +221,20 @@ def build_parcels(paths: dict[str, Path]) -> pd.DataFrame:
     p = p.merge(load_features(paths["extrafeatures"]), on="parcel_id", how="left")
     p[["pool", "spa"]] = p[["pool", "spa"]].fillna(False).astype(bool)
     p = p.merge(load_addresses(paths["site_addresses"]), on="parcel_id", how="left")
-    if "gis" in paths and paths["gis"] and Path(paths["gis"]).exists():
+    gis_error = None
+    try:
+        if not (paths.get("gis") and Path(paths["gis"]).exists()):
+            raise FileNotFoundError("parcel shapefile not downloaded")
         p = p.merge(parcel_centroids(paths["gis"]), on="parcel_id", how="left")
-    else:
+    except Exception as exc:  # noqa: BLE001 - comps fall back to neighborhood matching
         p["lat"] = np.nan
         p["lon"] = np.nan
+        gis_error = f"{type(exc).__name__}: {exc}"
     # Subdivision key: the first four parts of the parcel number (S-T-R-subdivision).
     p["subdivision"] = p["parcel_id"].str.rsplit("-", n=2).str[0]
-    return p.reset_index(drop=True)
+    p = p.reset_index(drop=True)
+    p.attrs["gis_error"] = gis_error
+    return p
 
 
 # ---------------------------------------------------------------- sales

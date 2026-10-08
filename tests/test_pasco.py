@@ -125,3 +125,27 @@ def test_county_build_and_report(raw, tmp_path, capsys):
                        "--site-dir", str(site)])
     out = capsys.readouterr().out
     assert "FAIR VALUE" in out and "ADJUSTED" in out and "1295 Montgomery Bell Road" in out
+
+
+def test_shapefile_in_subfolder_is_found(raw, tmp_path):
+    import zipfile
+    nested = tmp_path / "pasco_parcels.zip"
+    with zipfile.ZipFile(raw / "pasco_parcels.zip") as src, zipfile.ZipFile(nested, "w") as dst:
+        for n in src.namelist():
+            dst.writestr(f"Pasco_Parcels/{n}", src.read(n))
+    pts = pasco.parcel_centroids(nested)
+    assert len(pts) == 700 and pts["lat"].notna().all()
+
+
+def test_without_map_comps_fall_back_to_area(paths, tmp_path):
+    no_gis = {**paths, "gis": tmp_path / "missing.zip"}
+    parcels = pasco.build_parcels(no_gis)
+    assert parcels["lat"].isna().all()
+    assert "not downloaded" in parcels.attrs["gis_error"]
+    sales = pasco.build_sales(no_gis, parcels)
+    model = valuation.fit(sales)
+    flat = comps.TimeIndex({"33543": fx.zhvi_series(monthly=0.0), "33544": fx.zhvi_series(monthly=0.0)})
+    subj = comps.find_subject(parcels, "1295 Montgomery Bell Rd", pasco.normalize_address)
+    r = comps.value_subject(subj, sales, model, flat)
+    assert r["search"]["located"] is False and r["search"]["area"] == "same subdivision"
+    assert len(r["comps"]) >= 6 and r["fair_value"] > 0

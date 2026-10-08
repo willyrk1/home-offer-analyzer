@@ -124,23 +124,37 @@ def adjust(comp: pd.Series, subj_x: pd.Series, comp_x: pd.Series, model: dict,
 def value_subject(subject: pd.Series, sales: pd.DataFrame, model: dict, tindex: TimeIndex,
                   as_of: pd.Timestamp | None = None, exclude_parcel: bool = True) -> dict:
     as_of = as_of or sales["date"].max()
-    pool = sales[(sales["property_type"] == subject["property_type"]) & sales["lat"].notna()]
+    pool = sales[sales["property_type"] == subject["property_type"]]
     if exclude_parcel:
         pool = pool[pool["parcel_id"] != subject["parcel_id"]]
-    pool = pool.assign(distance_mi=haversine_miles(subject["lat"], subject["lon"], pool["lat"], pool["lon"]))
     # Most recent sale per parcel only.
     pool = pool.sort_values("date").drop_duplicates("parcel_id", keep="last")
+    located = pd.notna(subject.get("lat")) and pool["lat"].notna().any()
+
+    if located:
+        pool = pool[pool["lat"].notna()]
+        pool = pool.assign(distance_mi=haversine_miles(subject["lat"], subject["lon"], pool["lat"], pool["lon"]))
+        steps = [(f"within {r} mi", pool["distance_mi"] <= r, m) for r, m in SEARCH]
+    else:
+        # No coordinates: same subdivision, then appraiser neighborhood, then ZIP.
+        pool = pool.assign(distance_mi=np.where(pool["subdivision"] == subject["subdivision"], 0.25,
+                                                np.where(pool["nbhd"] == subject["nbhd"], 0.75, 1.5)))
+        steps = [(f"same {label}", mask, m)
+                 for label, mask in [("subdivision", pool["subdivision"] == subject["subdivision"]),
+                                     ("neighborhood", pool["nbhd"] == subject["nbhd"]),
+                                     ("ZIP", pool["zip"] == subject["zip"])]
+                 for m in (6, 12, 18)]
 
     chosen, reach = None, None
-    for radius, months in SEARCH:
-        cand = pool[(pool["distance_mi"] <= radius) & (pool["date"] > as_of - pd.DateOffset(months=months))]
+    for label, mask, months in steps:
+        cand = pool[mask & (pool["date"] > as_of - pd.DateOffset(months=months))]
         # Keep size within +/-35% so adjustments stay reasonable.
         cand = cand[np.abs(np.log(cand["sqft"] / subject["sqft"])) <= 0.35]
         if len(cand) >= MIN_COMPS:
-            chosen, reach = cand, {"radius_mi": radius, "months": months}
+            chosen, reach = cand, {"area": label, "months": months, "located": bool(located)}
             break
     if chosen is None:
-        chosen, reach = cand, {"radius_mi": SEARCH[-1][0], "months": SEARCH[-1][1], "thin": True}
+        chosen, reach = cand, {"area": label, "months": months, "located": bool(located), "thin": True}
 
     chosen = chosen.assign(similarity=_similarity(chosen, subject, as_of))
     chosen = chosen.sort_values("similarity", ascending=False).head(MAX_COMPS)

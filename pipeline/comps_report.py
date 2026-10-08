@@ -39,7 +39,8 @@ def render(r: dict) -> str:
         "",
         f"FAIR VALUE  {money(r['fair_value'])}   range {money(r['range'][0])} – {money(r['range'][1])}"
         if r["fair_value"] else "FAIR VALUE  (no comps found)",
-        f"  as of {r['as_of']}; comps within {r['search']['radius_mi']} mi, last {r['search']['months']} months"
+        f"  as of {r['as_of']}; comps {r['search']['area']}, last {r['search']['months']} months"
+        + ("" if r["search"]["located"] else "  [no parcel coordinates: matched by area]")
         + ("  [THIN: widest search used]" if r["search"].get("thin") else ""),
         f"  county model: {r['model']['n_sales']} sales {r['model']['window'][0]}..{r['model']['window'][1]}, "
         f"R2 {r['model']['r2']:.3f}, median abs error {r['model']['median_abs_pct_error']:.1f}%",

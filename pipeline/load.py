@@ -76,12 +76,30 @@ def zillow_forecast(path: Path, zips: set[str]) -> pd.DataFrame:
     }).reset_index(drop=True)
 
 
-def redfin_zip(path: Path, zips: set[str], chunksize: int = 250_000) -> pd.DataFrame:
-    """Stream Redfin's ZIP tracker and keep covered ZIPs, monthly 90-day windows."""
+def redfin_zip(path: Path, zips: set[str], chunksize: int = 250_000,
+               info: dict | None = None) -> pd.DataFrame:
+    """Stream Redfin's ZIP tracker and keep covered ZIPs, monthly 90-day windows.
+
+    If `info` is given, it is filled with what the real file contains (columns,
+    window lengths, latest period, non-empty counts for covered ZIPs) so format
+    changes are visible without downloading the file by hand.
+    """
     parts = []
+    seen = {"columns": None, "durations": set(), "property_types": set(),
+            "latest_period_end_all": None, "rows_all": 0}
     with open_text(path) as fh:
         for chunk in pd.read_csv(fh, sep="\t", chunksize=chunksize, low_memory=False):
             chunk.columns = [c.lower() for c in chunk.columns]
+            if seen["columns"] is None:
+                seen["columns"] = list(chunk.columns)
+            seen["rows_all"] += len(chunk)
+            if "period_duration" in chunk:
+                seen["durations"].update(pd.to_numeric(chunk["period_duration"], errors="coerce").dropna().astype(int).tolist())
+                chunk = chunk[pd.to_numeric(chunk["period_duration"], errors="coerce").isin([90])]
+            seen["property_types"].update(chunk["property_type"].dropna().unique().tolist())
+            latest = chunk["period_end"].max() if len(chunk) else None
+            if latest and (seen["latest_period_end_all"] is None or latest > seen["latest_period_end_all"]):
+                seen["latest_period_end_all"] = latest
             chunk["zip"] = chunk["region"].astype(str).str.extract(r"(\d{5})")[0]
             chunk = chunk[chunk["zip"].isin(zips)
                           & chunk["property_type"].isin(REDFIN_PROPERTY_TYPES)]
@@ -89,6 +107,14 @@ def redfin_zip(path: Path, zips: set[str], chunksize: int = 250_000) -> pd.DataF
                 cols = ["zip", "property_type", "period_begin", "period_end",
                         *[c for c in REDFIN_KEEP if c in chunk.columns]]
                 parts.append(chunk[cols])
+    if info is not None:
+        info.update({
+            "columns": seen["columns"],
+            "period_durations": sorted(seen["durations"]),
+            "property_types": sorted(seen["property_types"]),
+            "latest_period_end_all_zips": seen["latest_period_end_all"],
+            "rows_all": seen["rows_all"],
+        })
     if not parts:
         return pd.DataFrame(columns=["zip", "property_type", "date", *REDFIN_KEEP])
     df = pd.concat(parts, ignore_index=True)

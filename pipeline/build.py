@@ -51,6 +51,31 @@ def archive_forecast(fc: pd.DataFrame, archive_dir: Path, today: date) -> Path |
     return None
 
 
+def diagnostics(rf: pd.DataFrame, rf_info: dict, zhvi: pd.DataFrame,
+                fc: pd.DataFrame, zip_set: set[str]) -> dict:
+    """What the real downloads contained, published so format changes are visible."""
+    latest = rf["date"].max() if not rf.empty else None
+    at_latest = rf[rf["date"] == latest] if latest is not None else rf
+    return {
+        "covered_zips": len(zip_set),
+        "zillow": {
+            "zips_with_zhvi": int(zhvi["zip"].nunique()),
+            "latest_zhvi": zhvi["date"].max().strftime("%Y-%m") if not zhvi.empty else None,
+            "zips_with_forecast": int(fc["zip"].nunique()),
+        },
+        "redfin": {
+            **rf_info,
+            "covered_rows": int(len(rf)),
+            "covered_zips_with_data": int(rf["zip"].nunique()) if not rf.empty else 0,
+            "latest_covered": latest.strftime("%Y-%m") if latest is not None else None,
+            "non_empty_at_latest": {c: int(at_latest[c].notna().sum())
+                                    for c in load.REDFIN_KEEP if c in at_latest},
+            "non_empty_any_date": {c: int(rf[c].notna().sum())
+                                   for c in load.REDFIN_KEEP if c in rf},
+        },
+    }
+
+
 def series_points(df: pd.DataFrame, value_col: str, scale: float = 1.0) -> list:
     df = df[df["date"] >= SERIES_START].dropna(subset=[value_col])
     return [[d.strftime("%Y-%m"), float(v) * scale] for d, v in zip(df["date"], df[value_col])]
@@ -67,8 +92,12 @@ def build(raw_dir: Path, out_dir: Path, archive_dir: Path, coverage_path: Path,
 
     zhvi = load.zhvi_long(zhvi_wide, zip_set)
     fc = load.zillow_forecast(_raw_path(raw_dir, "zillow_forecast"), zip_set)
-    rf = load.redfin_zip(_raw_path(raw_dir, "redfin_zip"), zip_set)
+    rf_info: dict = {}
+    rf = load.redfin_zip(_raw_path(raw_dir, "redfin_zip"), zip_set, info=rf_info)
     archived = archive_forecast(fc, archive_dir, today)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "diagnostics.json").write_text(json.dumps(_clean(
+        diagnostics(rf, rf_info, zhvi, fc, zip_set)), indent=1, default=str))
 
     zips_dir = out_dir / "zips"
     zips_dir.mkdir(parents=True, exist_ok=True)

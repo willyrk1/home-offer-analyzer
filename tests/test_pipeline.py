@@ -82,3 +82,14 @@ def test_signal_handles_missing_data():
 def test_zip5_pads_leading_zeros():
     assert load.zip5(2134) == "02134"
     assert load.zip5("02134") == "02134"
+
+
+def test_diagnostics_written(built):
+    _, out, _ = built
+    d = json.loads((out / "diagnostics.json").read_text())
+    rf = d["redfin"]
+    assert rf["period_durations"] == [90]
+    assert "price_drops" in rf["columns"]
+    assert rf["latest_covered"] == "2026-08"
+    assert rf["non_empty_at_latest"]["price_drops"] == 8  # 4 ZIPs x 2 property types
+    assert d["zillow"]["zips_with_forecast"] == 4

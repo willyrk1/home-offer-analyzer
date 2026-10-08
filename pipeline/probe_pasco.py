@@ -10,6 +10,8 @@ code-like columns. Owner names and mailing addresses are never downloaded
 from __future__ import annotations
 
 import io
+import sys
+import traceback
 import re
 import urllib.request
 import zipfile
@@ -57,17 +59,25 @@ def main() -> None:
         except Exception as exc:  # noqa: BLE001
             print("download failed:", exc)
             continue
-        with zipfile.ZipFile(io.BytesIO(data)) as z:
+        try:
+            z = zipfile.ZipFile(io.BytesIO(data))
+        except Exception:  # noqa: BLE001
+            print("not a zip; first bytes:", data[:300])
+            continue
+        with z:
             print("members:", [(i.filename, i.file_size) for i in z.infolist()])
             for member in z.namelist():
                 if member.lower().endswith((".csv", ".txt")):
                     with z.open(member) as fh:
                         raw = fh.read()
                     sep = "|" if raw[:2000].count(b"|") > raw[:2000].count(b",") else ","
-                    df = pd.read_csv(io.BytesIO(raw), sep=sep, dtype=str, low_memory=False,
-                                     encoding="latin-1")
-                    print(f"--- {member} (sep {sep!r})")
-                    describe(member, df)
+                    print(f"--- {member} (sep {sep!r}); first line: {raw[:300]!r}")
+                    try:
+                        df = pd.read_csv(io.BytesIO(raw), sep=sep, dtype=str, low_memory=False,
+                                         encoding="latin-1", on_bad_lines="warn")
+                        describe(member, df)
+                    except Exception:  # noqa: BLE001
+                        traceback.print_exc(file=sys.stdout)
 
     for url in EXTRA_URLS:
         print(f"\n===== {url} =====")
@@ -77,11 +87,14 @@ def main() -> None:
             print("download failed:", exc)
             continue
         if url.endswith(".xlsx"):
+          try:
             sheets = pd.read_excel(io.BytesIO(data), sheet_name=None, dtype=str)
             for sheet, df in sheets.items():
                 print(f"--- sheet {sheet}: {len(df)} rows; columns {list(df.columns)}")
                 with pd.option_context("display.max_rows", 400, "display.width", 250):
                     print(df.head(400).to_string())
+          except Exception:  # noqa: BLE001
+            traceback.print_exc(file=sys.stdout)
         else:
             text = data.decode("utf-8", "replace")
             print("\n".join(sorted(set(re.findall(r'href="([^"]+)"', text)))))

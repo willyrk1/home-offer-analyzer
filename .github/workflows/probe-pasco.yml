@@ -1,12 +1,13 @@
 name: Probe Pasco files
 
-# Manual one-off: prints the layout of the Pasco Property Appraiser bulk files
-# to the job log so the sales adapter can be written against the real format.
+# Manual one-off: records the layout of the Pasco Property Appraiser bulk files
+# so the sales adapter can be written against the real format. The report is
+# committed to the probe-output branch (not main, not the public site).
 on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   probe:
@@ -18,4 +19,16 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt openpyxl
-      - run: python -m pipeline.probe_pasco
+      - name: Probe
+        run: python -u -m pipeline.probe_pasco > probe-report.txt 2>&1 || true
+      - name: Save report to probe-output branch
+        run: |
+          cp probe-report.txt /tmp/probe-report.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan probe-output
+          git rm -rq --cached .
+          cp /tmp/probe-report.txt pasco-probe-report.txt
+          git add pasco-probe-report.txt
+          git commit -m "Pasco probe report ($(date -u +%Y-%m-%d))"
+          git push -f origin probe-output

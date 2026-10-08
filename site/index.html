@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home Offer Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <h1>Home Offer Analyzer</h1>
+      <p class="sub">ZIP-level market trends: where buyer leverage is building, measured against the same month a year earlier.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="picker" aria-label="Choose a ZIP">
+      <label for="zip-input">ZIP code</label>
+      <input id="zip-input" list="zip-options" inputmode="numeric" maxlength="5" placeholder="e.g. 33543" autocomplete="off">
+      <datalist id="zip-options"></datalist>
+      <select id="county-filter" aria-label="Filter by county"><option value="">All counties</option></select>
+    </section>
+
+    <section id="detail" class="detail" hidden></section>
+
+    <section class="overview">
+      <h2>All covered ZIPs</h2>
+      <div class="table-scroll">
+        <table id="zip-table">
+          <thead>
+            <tr>
+              <th data-key="zip">ZIP</th>
+              <th data-key="city">City</th>
+              <th data-key="county">County</th>
+              <th data-key="zhvi" class="num">Typical value</th>
+              <th data-key="zhvi_yoy_pct" class="num">1-yr change</th>
+              <th data-key="forecast_12m_pct" class="num">Zillow 12-mo forecast</th>
+              <th data-key="price_drops_pct" class="num">Price cuts</th>
+              <th data-key="inventory_yoy_pct" class="num">Inventory vs last yr</th>
+              <th data-key="verdict">Read</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <p id="built"></p>
+    <p>Data: Zillow Research (home value index and forecast) and the Redfin Data Center (ZIP market tracker). Redfin figures are rolling 90-day windows. Not an appraisal or financial advice.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

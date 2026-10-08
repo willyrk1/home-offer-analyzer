@@ -1,0 +1,93 @@
+:root {
+  --bg: #f7f6f2;
+  --panel: #ffffff;
+  --ink: #1d2124;
+  --muted: #5f676d;
+  --line: #e2dfd6;
+  --accent: #2f6b5a;
+  --buyer: #2f6b5a;
+  --seller: #a4462f;
+  --neutral: #7a6f55;
+  --chart: #2f6b5a;
+  --grid: #ece9e1;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15181a;
+    --panel: #1d2124;
+    --ink: #e9e6df;
+    --muted: #9aa2a7;
+    --line: #2e3438;
+    --accent: #7cc4ad;
+    --buyer: #7cc4ad;
+    --seller: #e58c74;
+    --neutral: #c9b98f;
+    --chart: #7cc4ad;
+    --grid: #2a2f33;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+.top { border-bottom: 1px solid var(--line); padding: 28px 0 20px; margin-bottom: 24px; }
+h1 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+h2 { font-size: 18px; margin: 0 0 12px; }
+h3 { font-size: 15px; margin: 0 0 8px; }
+.sub { margin: 6px 0 0; color: var(--muted); }
+
+.picker { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 24px; }
+.picker label { font-weight: 600; }
+input, select {
+  font: inherit; color: inherit; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+}
+#zip-input { width: 140px; }
+
+.detail { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 28px; }
+.detail-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.detail-head h2 { margin: 0; font-size: 22px; }
+.detail-head .place { color: var(--muted); }
+
+.verdict { display: inline-block; padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 13px; border: 1px solid currentColor; }
+.verdict.buyer { color: var(--buyer); }
+.verdict.seller { color: var(--seller); }
+.verdict.neutral { color: var(--neutral); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin: 18px 0; }
+.tile { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.tile .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.tile .value { font-size: 22px; font-weight: 650; margin-top: 2px; }
+.tile .note { font-size: 13px; color: var(--muted); }
+.up-buyer { color: var(--buyer); }
+.up-seller { color: var(--seller); }
+
+.checks { margin: 0 0 18px; padding: 0; list-style: none; }
+.checks li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.checks li:last-child { border-bottom: 0; }
+.checks .tag { font-weight: 600; white-space: nowrap; }
+
+.charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.chart { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .axis { fill: var(--muted); font-size: 10px; }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.chart .series { fill: none; stroke: var(--chart); stroke-width: 2; }
+.chart .empty { color: var(--muted); font-size: 13px; }
+.explain { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+
+.overview { margin-bottom: 32px; }
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { cursor: pointer; user-select: none; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+th.sorted::after { content: " ▾"; }
+th.sorted.asc::after { content: " ▴"; }
+td.num, th.num { text-align: right; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--bg); }
+.foot { color: var(--muted); font-size: 13px; padding-bottom: 32px; }

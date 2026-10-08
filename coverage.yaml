@@ -1,0 +1,29 @@
+# Areas the site covers.
+#
+# level: market  -> ZIP trends, indicators and forecasts only (no adapter needed)
+# level: full    -> also comps, valuation and offers (needs a sales-record adapter;
+#                   not built yet, so every county starts at "market")
+#
+# ZIPs are selected from Zillow's ZIP file by matching state + county name.
+
+counties:
+  - name: Pasco County
+    state: FL
+    fips: "12101"
+    level: market
+    sales_adapter: null   # future: adapters/fl_pasco.py (Pasco Property Appraiser)
+
+  - name: Knox County
+    state: TN
+    fips: "47093"
+    level: market
+    sales_adapter: null
+
+  - name: Bradley County
+    state: TN
+    fips: "47011"
+    level: market
+    sales_adapter: null
+
+# Extra individual ZIPs outside the counties above (market level only).
+extra_zips: []

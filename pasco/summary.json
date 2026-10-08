@@ -1,0 +1,20 @@
+{
+ "county": "pasco",
+ "parcels_residential": 221984,
+ "parcels_with_location": 221773,
+ "gis_error": null,
+ "parcels_with_address": 211404,
+ "property_types": {
+  "single_family": 185770,
+  "townhome": 23749,
+  "condo": 12465
+ },
+ "sales_since_2016_by_class": {
+  "non_market": 160855,
+  "market": 153412,
+  "distressed": 10974
+ },
+ "residential_sales_used": 139945,
+ "latest_sale": "2026-09-29",
+ "market_sales_last_90_days": 2293
+}

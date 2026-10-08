@@ -1,0 +1,53 @@
+{
+ "features": {
+  "ln_sqft": {
+   "coef": 0.6084,
+   "se": 0.0107,
+   "label": "Size (log sq ft)"
+  },
+  "age": {
+   "coef": -0.0082,
+   "se": 0.0002,
+   "label": "Age (per year)"
+  },
+  "new": {
+   "coef": 0.0011,
+   "se": 0.0102,
+   "label": "Built within 2 years"
+  },
+  "ln_lot": {
+   "coef": 0.118,
+   "se": 0.0039,
+   "label": "Lot (log acres)"
+  },
+  "baths": {
+   "coef": 0.0529,
+   "se": 0.0048,
+   "label": "Bathrooms (each)"
+  },
+  "pool": {
+   "coef": 0.1345,
+   "se": 0.0051,
+   "label": "Pool"
+  },
+  "two_story": {
+   "coef": -0.0437,
+   "se": 0.0062,
+   "label": "Two-story"
+  },
+  "quality": {
+   "coef": 0.1129,
+   "se": 0.0049,
+   "label": "Quality grade (per step)"
+  }
+ },
+ "n_sales": 20734,
+ "n_neighborhoods": 294,
+ "window": [
+  "2024-09-30",
+  "2026-09-29"
+ ],
+ "r2": 0.8069,
+ "rmse_log": 0.2463,
+ "median_abs_pct_error": 10.2308
+}

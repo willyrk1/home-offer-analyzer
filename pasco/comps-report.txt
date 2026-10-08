@@ -1,21 +1,228 @@
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/comps_report.py", line 86, in <module>
-    main()
-  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/comps_report.py", line 72, in main
-    parcels = pd.read_parquet(work / "parcels.parquet")
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pandas/io/parquet.py", line 671, in read_parquet
-    return impl.read(
-           ^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pandas/io/parquet.py", line 253, in read
-    path_or_handle, handles, filesystem = _get_path_or_handle(
-                                          ^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pandas/io/parquet.py", line 141, in _get_path_or_handle
-    handles = get_handle(
-              ^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pandas/io/common.py", line 939, in get_handle
-    handle = open(handle, ioargs.mode)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^
-FileNotFoundError: [Errno 2] No such file or directory: '/home/runner/work/home-offer-analyzer/home-offer-analyzer/work/pasco/parcels.parquet'
+====================================================================================================
+SUBJECT  1295 Montgomery Bell Road, Wesley Chapel 33543   (parcel 35-26-20-0080-00000-0090)
+  single_family, 2571 sq ft, built 2018, 3.0 baths, 2.0 stories, lot 0.1403 ac, pool: False, quality 4, neighborhood UNPK (Union Park)
+  appraiser just value: $396,960
+
+FAIR VALUE  $449,397   range $427,233 – $471,561
+  as of 2026-09-29; comps within 0.5 mi, last 6 months
+  county model: 20734 sales 2024-09-30..2026-09-29, R2 0.807, median abs error 10.2%
+
+COMPS
+- 32101 Goddard Drive (33543)  sold 2026-04-10 $450,000 [market]  0.11 mi  same nbhd
+    2598 sf, built 2018, 2.5 ba, lot 0.1414 ac, pool False  | similarity 0.65, weight 0.63
+    time x0.989 (2026-04 -> 2026-08) -> $445,042
+      Size (log sq ft)           diff -0.010  -0.6%  $-2,820
+      Age (per year)             diff +0.743  -0.6%  $-2,704
+      Lot (log acres)            diff -0.008  -0.1%  $-410
+      Bathrooms (each)           diff +0.500  +2.7%  $11,928
+    ADJUSTED $450,901  (net +1.3%, gross 4.0%)
+- 32373 Bannack Lane (33543)  sold 2026-08-14 $500,000 [market]  0.34 mi  same nbhd
+    2589 sf, built 2017, 3.5 ba, lot 0.2293 ac, pool False  | similarity 0.59, weight 0.52
+    time x1.000 (2026-08 -> 2026-08) -> $500,000
+      Size (log sq ft)           diff -0.007  -0.4%  $-2,118
+      Age (per year)             diff -0.257  +0.2%  $1,054
+      Lot (log acres)            diff -0.491  -5.6%  $-28,160
+      Bathrooms (each)           diff -0.500  -2.6%  $-13,052
+      Two-story                  diff +1.000  -4.3%  $-21,379
+    ADJUSTED $438,935  (net -12.2%, gross 13.2%)
+- 32597 Canyonlands Drive (33543)  sold 2026-07-24 $409,900 [market]  0.41 mi  same nbhd
+    2447 sf, built 2021, 3.0 ba, lot 0.101 ac, pool False  | similarity 0.52, weight 0.47
+    time x0.998 (2026-07 -> 2026-08) -> $409,026
+      Size (log sq ft)           diff +0.049  +3.1%  $12,488
+      Age (per year)             diff +3.743  -3.0%  $-12,364
+      Lot (log acres)            diff +0.329  +4.0%  $16,175
+    ADJUSTED $424,937  (net +3.9%, gross 10.0%)
+- 32030 Goddard Drive (33543)  sold 2026-08-06 $515,000 [market]  0.16 mi  same nbhd
+    2822 sf, built 2018, 3.5 ba, lot 0.1809 ac, pool False  | similarity 0.51, weight 0.44
+    time x1.000 (2026-08 -> 2026-08) -> $515,000
+      Size (log sq ft)           diff -0.093  -5.5%  $-28,375
+      Age (per year)             diff +0.743  -0.6%  $-3,129
+      Lot (log acres)            diff -0.254  -3.0%  $-15,216
+      Bathrooms (each)           diff -0.500  -2.6%  $-13,443
+      Two-story                  diff +1.000  -4.3%  $-22,021
+    ADJUSTED $437,580  (net -15.0%, gross 16.0%)  flags: net adjustment over 15%
+- 1160 Bering Road (33543)  sold 2026-06-18 $449,000 [market]  0.34 mi  same nbhd
+    2370 sf, built 2021, 3.0 ba, lot 0.1766 ac, pool False  | similarity 0.47, weight 0.41
+    time x0.995 (2026-06 -> 2026-08) -> $446,897
+      Size (log sq ft)           diff +0.081  +5.1%  $22,691
+      Age (per year)             diff +3.743  -3.0%  $-13,509
+      Lot (log acres)            diff -0.230  -2.7%  $-11,971
+      Two-story                  diff +1.000  -4.3%  $-19,109
+    ADJUSTED $424,244  (net -5.1%, gross 15.1%)
+- 1629 Montgomery Bell Road (33543)  sold 2026-07-23 $430,000 [market]  0.35 mi  same nbhd
+    2259 sf, built 2017, 2.5 ba, lot 0.1422 ac, pool False  | similarity 0.44, weight 0.39
+    time x0.998 (2026-07 -> 2026-08) -> $429,083
+      Size (log sq ft)           diff +0.129  +8.2%  $35,138
+      Age (per year)             diff -0.257  +0.2%  $905
+      Lot (log acres)            diff -0.013  -0.2%  $-681
+      Bathrooms (each)           diff +0.500  +2.7%  $11,501
+    ADJUSTED $476,911  (net +11.1%, gross 11.2%)
+- 1435 Montgomery Bell Road (33543)  sold 2026-04-24 $418,000 [market]  0.23 mi  same nbhd
+    2348 sf, built 2017, 2.0 ba, lot 0.1429 ac, pool False  | similarity 0.42, weight 0.38
+    time x0.989 (2026-04 -> 2026-08) -> $413,395
+      Size (log sq ft)           diff +0.091  +5.7%  $23,461
+      Age (per year)             diff -0.257  +0.2%  $872
+      Lot (log acres)            diff -0.018  -0.2%  $-895
+      Bathrooms (each)           diff +1.000  +5.4%  $22,457
+    ADJUSTED $460,560  (net +11.4%, gross 11.5%)
+- 1695 Ludington Avenue (33543)  sold 2026-05-07 $445,000 [market]  0.36 mi  same nbhd
+    2334 sf, built 2016, 2.5 ba, lot 0.1192 ac, pool False  | similarity 0.41, weight 0.37
+    time x0.992 (2026-05 -> 2026-08) -> $441,432
+      Size (log sq ft)           diff +0.097  +6.1%  $26,753
+      Age (per year)             diff -1.257  +1.0%  $4,573
+      Lot (log acres)            diff +0.163  +1.9%  $8,572
+      Bathrooms (each)           diff +0.500  +2.7%  $11,832
+    ADJUSTED $495,146  (net +12.2%, gross 11.7%)
+====================================================================================================
+SUBJECT  32237 Watoga Loop, Wesley Chapel 33543   (parcel 35-26-20-0020-00100-0090)
+  single_family, 2529 sq ft, built 2019, 3.0 baths, 2.0 stories, lot 0.1452 ac, pool: False, quality 4, neighborhood UNPK (Union Park)
+  appraiser just value: $402,692
+
+FAIR VALUE  $469,303   range $444,795 – $493,812
+  as of 2026-09-29; comps within 0.5 mi, last 6 months
+  county model: 20734 sales 2024-09-30..2026-09-29, R2 0.807, median abs error 10.2%
+
+COMPS
+- 1832 Tonka Terrace (33543)  sold 2026-06-29 $495,000 [market]  0.35 mi  same nbhd
+    2544 sf, built 2016, 3.0 ba, lot 0.1806 ac, pool False  | similarity 0.63, weight 0.58
+    time x0.995 (2026-06 -> 2026-08) -> $492,682
+      Size (log sq ft)           diff -0.006  -0.4%  $-1,769
+      Age (per year)             diff -2.257  +1.9%  $9,202
+      Lot (log acres)            diff -0.218  -2.5%  $-12,522
+      Two-story                  diff +1.000  -4.3%  $-21,067
+    ADJUSTED $466,532  (net -5.3%, gross 9.0%)
+- 32373 Bannack Lane (33543)  sold 2026-08-14 $500,000 [market]  0.39 mi  same nbhd
+    2589 sf, built 2017, 3.5 ba, lot 0.2293 ac, pool False  | similarity 0.53, weight 0.46
+    time x1.000 (2026-08 -> 2026-08) -> $500,000
+      Size (log sq ft)           diff -0.023  -1.4%  $-7,082
+      Age (per year)             diff -1.257  +1.0%  $5,180
+      Lot (log acres)            diff -0.457  -5.2%  $-26,244
+      Bathrooms (each)           diff -0.500  -2.6%  $-13,052
+      Two-story                  diff +1.000  -4.3%  $-21,379
+    ADJUSTED $439,915  (net -12.0%, gross 14.6%)
+- 1629 Montgomery Bell Road (33543)  sold 2026-07-23 $430,000 [market]  0.36 mi  same nbhd
+    2259 sf, built 2017, 2.5 ba, lot 0.1422 ac, pool False  | similarity 0.44, weight 0.40
+    time x0.998 (2026-07 -> 2026-08) -> $429,083
+      Size (log sq ft)           diff +0.113  +7.1%  $30,509
+      Age (per year)             diff -1.257  +1.0%  $4,445
+      Lot (log acres)            diff +0.021  +0.2%  $1,058
+      Bathrooms (each)           diff +0.500  +2.7%  $11,501
+    ADJUSTED $477,976  (net +11.4%, gross 11.1%)
+- 1695 Ludington Avenue (33543)  sold 2026-05-07 $445,000 [market]  0.30 mi  same nbhd
+    2334 sf, built 2016, 2.5 ba, lot 0.1192 ac, pool False  | similarity 0.42, weight 0.38
+    time x0.992 (2026-05 -> 2026-08) -> $441,432
+      Size (log sq ft)           diff +0.080  +5.0%  $22,085
+      Age (per year)             diff -2.257  +1.9%  $8,245
+      Lot (log acres)            diff +0.197  +2.4%  $10,398
+      Bathrooms (each)           diff +0.500  +2.7%  $11,832
+    ADJUSTED $496,251  (net +12.4%, gross 11.9%)
+- 1435 Montgomery Bell Road (33543)  sold 2026-04-24 $418,000 [market]  0.44 mi  same nbhd
+    2348 sf, built 2017, 2.0 ba, lot 0.1429 ac, pool False  | similarity 0.40, weight 0.36
+    time x0.989 (2026-04 -> 2026-08) -> $413,395
+      Size (log sq ft)           diff +0.074  +4.6%  $19,105
+      Age (per year)             diff -1.257  +1.0%  $4,282
+      Lot (log acres)            diff +0.016  +0.2%  $780
+      Bathrooms (each)           diff +1.000  +5.4%  $22,457
+    ADJUSTED $461,588  (net +11.7%, gross 11.3%)
+- 32226 Eldorado Canyon Loop (33543)  sold 2026-03-31 $480,000 [market]  0.25 mi
+    2370 sf, built 2024, 3.0 ba, lot 0.1685 ac, pool False  | similarity 0.40, weight 0.35
+    time x0.987 (2026-03 -> 2026-08) -> $473,827
+      Size (log sq ft)           diff +0.065  +4.0%  $19,094
+      Age (per year)             diff +5.743  -4.6%  $-21,797
+      Built within 2 years       diff -1.000  -0.1%  $-521
+      Lot (log acres)            diff -0.149  -1.7%  $-8,248
+      Two-story                  diff +1.000  -4.3%  $-20,260
+    ADJUSTED $441,815  (net -6.8%, gross 14.8%)
+- 32383 Natural Bridge Road (33543)  sold 2026-04-29 $560,000 [market]  0.16 mi  same nbhd
+    2377 sf, built 2015, 2.5 ba, lot 0.1636 ac, pool True  | similarity 0.37, weight 0.30
+    time x0.989 (2026-04 -> 2026-08) -> $553,830
+      Size (log sq ft)           diff +0.062  +3.8%  $21,285
+      Age (per year)             diff -3.257  +2.7%  $14,990
+      Lot (log acres)            diff -0.119  -1.4%  $-7,743
+      Bathrooms (each)           diff +0.500  +2.7%  $14,844
+      Pool                       diff -1.000  -12.6%  $-69,698
+    ADJUSTED $522,773  (net -5.6%, gross 23.2%)
+- 1755 Tonka Terrace (33543)  sold 2026-04-30 $550,000 [market]  0.31 mi  same nbhd
+    2866 sf, built 2016, 3.5 ba, lot 0.1986 ac, pool False  | similarity 0.36, weight 0.30
+    time x0.989 (2026-04 -> 2026-08) -> $543,941
+      Size (log sq ft)           diff -0.125  -7.3%  $-39,861
+      Age (per year)             diff -2.257  +1.9%  $10,160
+      Lot (log acres)            diff -0.313  -3.6%  $-19,735
+      Bathrooms (each)           diff -0.500  -2.6%  $-14,199
+      Two-story                  diff +1.000  -4.3%  $-23,258
+    ADJUSTED $461,339  (net -15.2%, gross 19.7%)  flags: net adjustment over 15%
+====================================================================================================
+SUBJECT  32373 Bannack Lane, Wesley Chapel 33543   (parcel 35-26-20-0240-00800-0010)
+  single_family, 2589 sq ft, built 2017, 3.5 baths, 1.0 stories, lot 0.2293 ac, pool: False, quality 4, neighborhood UNPK (Union Park)
+  appraiser just value: $434,401
+
+FAIR VALUE  $523,624   range $508,671 – $538,578
+  as of 2026-09-29; comps within 0.5 mi, last 6 months
+  county model: 20734 sales 2024-09-30..2026-09-29, R2 0.807, median abs error 10.2%
+
+COMPS
+- 1832 Tonka Terrace (33543)  sold 2026-06-29 $495,000 [market]  0.26 mi  same nbhd
+    2544 sf, built 2016, 3.0 ba, lot 0.1806 ac, pool False  | similarity 0.60, weight 0.56
+    time x0.995 (2026-06 -> 2026-08) -> $492,682
+      Size (log sq ft)           diff +0.018  +1.1%  $5,284
+      Age (per year)             diff -0.257  +0.2%  $1,039
+      Lot (log acres)            diff +0.239  +2.9%  $14,077
+      Bathrooms (each)           diff +0.500  +2.7%  $13,205
+    ADJUSTED $527,031  (net +7.0%, gross 6.8%)
+- 32030 Goddard Drive (33543)  sold 2026-08-06 $515,000 [market]  0.39 mi  same nbhd
+    2822 sf, built 2018, 3.5 ba, lot 0.1809 ac, pool False  | similarity 0.52, weight 0.47
+    time x1.000 (2026-08 -> 2026-08) -> $515,000
+      Size (log sq ft)           diff -0.086  -5.1%  $-26,305
+      Age (per year)             diff +1.743  -1.4%  $-7,309
+      Lot (log acres)            diff +0.237  +2.8%  $14,611
+    ADJUSTED $495,427  (net -3.8%, gross 9.4%)
+- 1755 Tonka Terrace (33543)  sold 2026-04-30 $550,000 [market]  0.18 mi  same nbhd
+    2866 sf, built 2016, 3.5 ba, lot 0.1986 ac, pool False  | similarity 0.48, weight 0.44
+    time x0.989 (2026-04 -> 2026-08) -> $543,941
+      Size (log sq ft)           diff -0.102  -6.0%  $-32,619
+      Age (per year)             diff -0.257  +0.2%  $1,147
+      Lot (log acres)            diff +0.144  +1.7%  $9,305
+    ADJUSTED $521,165  (net -4.2%, gross 7.9%)
+- 1927 Montgomery Bell Road (33543)  sold 2026-06-11 $550,000 [market]  0.31 mi  same nbhd
+    2882 sf, built 2015, 3.5 ba, lot 0.2212 ac, pool False  | similarity 0.47, weight 0.44
+    time x0.995 (2026-06 -> 2026-08) -> $547,424
+      Size (log sq ft)           diff -0.107  -6.3%  $-34,568
+      Age (per year)             diff -1.257  +1.0%  $5,671
+      Lot (log acres)            diff +0.036  +0.4%  $2,328
+    ADJUSTED $520,373  (net -4.9%, gross 7.8%)
+- 32237 Watoga Loop (33543)  sold 2026-07-21 $485,000 [market]  0.39 mi  same nbhd
+    2529 sf, built 2019, 3.0 ba, lot 0.1452 ac, pool False  | similarity 0.51, weight 0.44
+    time x0.998 (2026-07 -> 2026-08) -> $483,966
+      Size (log sq ft)           diff +0.023  +1.4%  $6,954
+      Age (per year)             diff +2.743  -2.2%  $-10,765
+      Lot (log acres)            diff +0.457  +5.5%  $26,810
+      Bathrooms (each)           diff +0.500  +2.7%  $12,972
+      Two-story                  diff -1.000  +4.5%  $21,618
+    ADJUSTED $543,404  (net +12.3%, gross 16.3%)
+- 32101 Goddard Drive (33543)  sold 2026-04-10 $450,000 [market]  0.33 mi  same nbhd
+    2598 sf, built 2018, 2.5 ba, lot 0.1414 ac, pool False  | similarity 0.45, weight 0.39
+    time x0.989 (2026-04 -> 2026-08) -> $445,042
+      Size (log sq ft)           diff -0.003  -0.2%  $-939
+      Age (per year)             diff +1.743  -1.4%  $-6,316
+      Lot (log acres)            diff +0.483  +5.9%  $26,126
+      Bathrooms (each)           diff +1.000  +5.4%  $24,177
+      Two-story                  diff -1.000  +4.5%  $19,880
+    ADJUSTED $510,510  (net +14.7%, gross 17.4%)
+- 1629 Montgomery Bell Road (33543)  sold 2026-07-23 $430,000 [market]  0.03 mi  same nbhd
+    2259 sf, built 2017, 2.5 ba, lot 0.1422 ac, pool False  | similarity 0.48, weight 0.38
+    time x0.998 (2026-07 -> 2026-08) -> $429,083
+      Size (log sq ft)           diff +0.136  +8.6%  $37,113
+      Age (per year)             diff +0.743  -0.6%  $-2,607
+      Lot (log acres)            diff +0.478  +5.8%  $24,887
+      Bathrooms (each)           diff +1.000  +5.4%  $23,310
+      Two-story                  diff -1.000  +4.5%  $19,167
+    ADJUSTED $539,958  (net +25.8%, gross 25.0%)  flags: net adjustment over 15%
+- 32741 Ansley Bloom Lane (33543)  sold 2026-06-09 $499,000 [market]  0.37 mi  same nbhd
+    2756 sf, built 2019, 3.0 ba, lot 0.132 ac, pool False  | similarity 0.42, weight 0.35
+    time x0.995 (2026-06 -> 2026-08) -> $496,663
+      Size (log sq ft)           diff -0.063  -3.7%  $-18,534
+      Age (per year)             diff +2.743  -2.2%  $-11,047
+      Lot (log acres)            diff +0.552  +6.7%  $33,442
+      Bathrooms (each)           diff +0.500  +2.7%  $13,312
+      Two-story                  diff -1.000  +4.5%  $22,185
+    ADJUSTED $535,232  (net +7.8%, gross 19.8%)

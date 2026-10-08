@@ -1,32 +1,39 @@
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/county_build.py", line 82, in <module>
-    main()
-  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/county_build.py", line 73, in main
-    r = build_county(a.county, raw, work, a.site_dir, offline=a.offline)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/county_build.py", line 35, in build_county
-    parcels = adapter.build_parcels(paths)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/counties/pasco.py", line 193, in build_parcels
-    p = p.merge(parcel_centroids(paths["gis"]), on="parcel_id", how="left")
-                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/counties/pasco.py", line 167, in parcel_centroids
-    gdf = gpd.read_file(f"zip://{gis_zip}")
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/geopandas/io/file.py", line 322, in _read_file
-    return _read_file_pyogrio(
-           ^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/geopandas/io/file.py", line 582, in _read_file_pyogrio
-    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pyogrio/geopandas.py", line 382, in read_dataframe
-    result = read_func(
-             ^^^^^^^^^^
-  File "/opt/hostedtoolcache/Python/3.12.14/x64/lib/python3.12/site-packages/pyogrio/raw.py", line 200, in read
-    return ogr_read(
-           ^^^^^^^^^
-  File "pyogrio/_io.pyx", line 1708, in pyogrio._io.ogr_read
-  File "pyogrio/_io.pyx", line 285, in pyogrio._io.ogr_open
-pyogrio.errors.DataSourceError: '/vsizip//home/runner/work/home-offer-analyzer/home-offer-analyzer/raw/pasco/pasco_parcels.zip' not recognized as being in a supported file format.; It might help to specify the correct driver explicitly by prefixing the file path with '<DRIVER>:', e.g. 'CSV:path'.
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: /vsizip//home/runner/work/home-offer-analyzer/home-offer-analyzer/raw/pasco/pasco_parcels.zip/workspace/scripts/pascoshp/pasco_parcels.shp contains polygon(s) with rings with invalid winding order. Autocorrecting them, but that shapefile should be corrected using ogr2ogr for example.
+  return ogr_read(
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: organizePolygons() received an unexpected geometry.  Either a polygon with interior rings, or a polygon with less than 4 points, or a non-Polygon geometry.  Return arguments as a collection.
+  return ogr_read(
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 181696 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
+  return ogr_read(
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 308338 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
+  return ogr_read(
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 312723 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
+  return ogr_read(
+{
+ "county": "pasco",
+ "parcels_residential": 221984,
+ "parcels_with_location": 221773,
+ "gis_error": null,
+ "parcels_with_address": 211404,
+ "property_types": {
+  "single_family": 185770,
+  "townhome": 23749,
+  "condo": 12465
+ },
+ "sales_since_2016_by_class": {
+  "non_market": 160855,
+  "market": 153412,
+  "distressed": 10974
+ },
+ "residential_sales_used": 139945,
+ "latest_sale": "2026-09-29",
+ "market_sales_last_90_days": 2293
+}
+model: 20734 sales, R2 0.807, median abs error 10.2%
+  Size (log sq ft)             +0.6084  (se 0.0107)
+  Age (per year)               -0.0082  (se 0.0002)
+  Built within 2 years         +0.0011  (se 0.0102)
+  Lot (log acres)              +0.1180  (se 0.0039)
+  Bathrooms (each)             +0.0529  (se 0.0048)
+  Pool                         +0.1345  (se 0.0051)
+  Two-story                    -0.0437  (se 0.0062)
+  Quality grade (per step)     +0.1129  (se 0.0049)

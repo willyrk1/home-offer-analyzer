@@ -9,6 +9,7 @@ const pct = (v, digits = 1) => v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFix
 const pts = (v) => v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)} pts`;
 const plain = (v, digits = 1) => v == null ? "—" : v.toFixed(digits);
 const days = (v) => v == null ? "—" : `${v > 0 ? "+" : ""}${Math.round(v)} days`;
+const src = (name, date) => name ? `${name}, ${date ?? "—"}` : "no data";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 // direction = +1 if a rising value favors buyers, -1 if it favors sellers.
@@ -120,11 +121,11 @@ async function showZip(zip) {
       ${tile("Typical home value", money(i.zhvi), `Zillow, ${i.zhvi_date ?? "—"}`)}
       ${tile("1-year change", pct(i.zhvi_yoy_pct), `3-mo ${pct(i.zhvi_3m_pct)} · vs 2019 ${pct(i.zhvi_vs_2019_pct, 0)}`, tone(i.zhvi_yoy_pct, -1))}
       ${tile("Zillow 12-month forecast", pct(f?.forecast_12m_pct), f ? `to ${f.target_date_12m?.slice(0, 7)}` : "not published", tone(f?.forecast_12m_pct, -1))}
-      ${tile("Listings with price cuts", i.price_drops_pct == null ? "—" : i.price_drops_pct.toFixed(1) + "%", `${pts(i.price_drops_yoy_pts)} vs a year ago`, tone(i.price_drops_yoy_pts, 1))}
-      ${tile("Inventory", i.inventory == null ? "—" : Math.round(i.inventory).toLocaleString(), `${pct(i.inventory_yoy_pct, 0)} vs last yr · ${pct(i.inventory_vs_2019_pct, 0)} vs 2019`, tone(i.inventory_yoy_pct, 1))}
-      ${tile("Median days on market", i.median_dom == null ? "—" : Math.round(i.median_dom), `${days(i.median_dom_yoy_days)} vs a year ago`, tone(i.median_dom_yoy_days, 1))}
-      ${tile("Sale-to-list", i.avg_sale_to_list_pct == null ? "—" : i.avg_sale_to_list_pct.toFixed(1) + "%", `${pts(i.sale_to_list_yoy_pts)} vs a year ago`, tone(i.sale_to_list_yoy_pts, -1))}
-      ${tile("Median sale price", money(i.median_sale_price), `${pct(i.median_sale_price_yoy_pct)} vs last yr · ${money(i.median_ppsf)}/sf`, tone(i.median_sale_price_yoy_pct, -1))}
+      ${tile("Listings with price cuts", i.cuts_pct == null ? "—" : i.cuts_pct.toFixed(1) + "%", `${pts(i.cuts_yoy_pts)} vs a year ago · ${src(i.cuts_source, i.cuts_date)}`, tone(i.cuts_yoy_pts, 1))}
+      ${tile("Homes for sale", i.inv == null ? "—" : Math.round(i.inv).toLocaleString(), `${pct(i.inv_yoy_pct, 0)} vs last yr · ${pct(i.inv_vs_2019_pct, 0)} vs 2019 · ${src(i.inv_source, i.inv_date)}`, tone(i.inv_yoy_pct, 1))}
+      ${tile("Median days on market", i.dom == null ? "—" : Math.round(i.dom), `${days(i.dom_yoy_days)} vs a year ago · ${src(i.dom_source, i.dom_date)}`, tone(i.dom_yoy_days, 1))}
+      ${tile("Sale-to-list", i.avg_sale_to_list_pct == null ? "—" : i.avg_sale_to_list_pct.toFixed(1) + "%", `${pts(i.sale_to_list_yoy_pts)} vs a year ago · ${src("Redfin", i.redfin_date)}`, tone(i.sale_to_list_yoy_pts, -1))}
+      ${tile("Median sale price", money(i.median_sale_price), `${pct(i.median_sale_price_yoy_pct)} vs last yr · ${money(i.median_ppsf)}/sf · ${src("Redfin", i.redfin_date)}`, tone(i.median_sale_price_yoy_pct, -1))}
     </div>
 
     <h3>How the read is scored</h3>
@@ -132,12 +133,13 @@ async function showZip(zip) {
       ${s.checks.map((c) => `<li><span>${esc(c.label)}: ${c.value > 0 ? "+" : ""}${plain(c.value)}${c.unit === "%" ? "%" : " " + c.unit}</span>
         <span class="tag ${c.score > 0 ? "up-buyer" : c.score < 0 ? "up-seller" : ""}">${c.score > 0 ? "favors buyers" : c.score < 0 ? "favors sellers" : "neutral"}</span></li>`).join("")}
     </ul>
-    <p class="explain">Each leading indicator is compared with the same month a year earlier so seasonal swings don't count. Two or more net signals in one direction set the read. Redfin figures are rolling 90-day windows ending ${i.redfin_date ?? "—"}.</p>
+    <p class="explain">Each leading indicator is compared with the same month a year earlier so seasonal swings don't count. Two or more net signals in one direction set the read. Each tile names its source and month. Redfin figures are rolling 90-day windows; its ZIP file currently ends ${i.redfin_date ?? "—"}, so newer Realtor.com listing data is used where available.</p>
 
     <div class="charts">
       ${chart("Typical home value (Zillow)", rec.series.zhvi, money)}
       ${chart("Listings with price cuts", rec.series.price_drops_pct, (v) => v.toFixed(0) + "%")}
-      ${chart("Inventory", rec.series.inventory, (v) => Math.round(v).toLocaleString())}
+      ${chart("Active listings (Realtor.com)", rec.series.active_listings, (v) => Math.round(v).toLocaleString())}
+      ${chart("Inventory (Redfin)", rec.series.inventory, (v) => Math.round(v).toLocaleString())}
       ${chart("Median days on market", rec.series.median_dom, (v) => Math.round(v))}
       ${chart("Sale-to-list ratio", rec.series.sale_to_list_pct, (v) => v.toFixed(1) + "%")}
       ${chart("Median sale price (Redfin)", rec.series.median_sale_price, money)}

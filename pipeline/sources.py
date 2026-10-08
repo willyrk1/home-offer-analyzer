@@ -20,7 +20,14 @@ SOURCES = {
     # Redfin Data Center market tracker, ZIP level, rolling 90-day windows.
     # Large (hundreds of MB compressed); it is streamed and filtered in chunks.
     "redfin_zip": "https://redfin-public-data.s3.us-west-2.amazonaws.com/redfin_market_tracker/zip_code_market_tracker.tsv000.gz",
+    # Realtor.com Research monthly listing metrics by ZIP, full history. Redfin's
+    # ZIP file has no price-drop data and stopped updating after May 2026, so this
+    # supplies price-reduced counts and current active-listing inventory.
+    "realtor_zip": "https://econdata.s3-us-west-2.amazonaws.com/Reports/Core/RDC_Inventory_Core_Metrics_Zip_History.csv",
 }
+
+# A failed download of an optional source is recorded and the build continues.
+OPTIONAL = {"realtor_zip"}
 
 USER_AGENT = "home-offer-analyzer/0.1 (+https://github.com/willyrk1/home-offer-analyzer)"
 

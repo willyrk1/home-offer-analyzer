@@ -76,6 +76,11 @@ def redfin_indicators(rf: pd.DataFrame) -> dict:
         v = col(name, last)
         out[f"{name}_pct"] = None if v is None else v * 100
 
+    # Redfin leaves months of supply empty at ZIP level; derive it from the
+    # 90-day window: inventory / (homes sold per month).
+    if out["months_of_supply"] is None and out["inventory"] is not None and out["homes_sold"]:
+        out["months_of_supply"] = out["inventory"] / (out["homes_sold"] / 3)
+
     out["median_sale_price_yoy_pct"] = _pct_change(out["median_sale_price"], col("median_sale_price", year_ago))
     out["inventory_yoy_pct"] = _pct_change(out["inventory"], col("inventory", year_ago))
     out["inventory_vs_2019_pct"] = _pct_change(out["inventory"], col("inventory", same_2019))
@@ -90,6 +95,69 @@ def redfin_indicators(rf: pd.DataFrame) -> dict:
     return out
 
 
+def realtor_indicators(rt: pd.DataFrame) -> dict:
+    """rt: Realtor.com monthly rows for one ZIP (listing-side data)."""
+    if rt.empty:
+        return {}
+    df = rt.set_index("date").sort_index()
+    last = df.index.max()
+    year_ago = last - pd.DateOffset(years=1)
+    same_2019 = last.replace(year=2019)
+
+    def col(name, when):
+        return _num(df[name].get(when)) if name in df else None
+
+    share = col("price_reduced_share", last)
+    share_ya = col("price_reduced_share", year_ago)
+    active = col("active_listing_count", last)
+    dom = col("median_days_on_market", last)
+    return {
+        "realtor_date": last.strftime("%Y-%m"),
+        "price_cut_share_pct": None if share is None else share * 100,
+        "price_cut_share_yoy_pts": _diff(None if share is None else share * 100,
+                                         None if share_ya is None else share_ya * 100),
+        "active_listings": active,
+        "active_listings_yoy_pct": _pct_change(active, col("active_listing_count", year_ago)),
+        "active_listings_vs_2019_pct": _pct_change(active, col("active_listing_count", same_2019)),
+        "listing_dom": dom,
+        "listing_dom_yoy_days": _diff(dom, col("median_days_on_market", year_ago)),
+        "median_listing_price": col("median_listing_price", last),
+    }
+
+
+def combine(ind: dict) -> dict:
+    """Pick the freshest source for each leading indicator the read uses.
+
+    Price cuts come from Redfin when it has them, otherwise Realtor.com.
+    Inventory and days on market use Realtor.com when its month is newer.
+    Each pick records its source so the site can label it.
+    """
+    rd, rt = ind.get("redfin_date"), ind.get("realtor_date")
+    realtor_newer = rt is not None and (rd is None or rt > rd)
+
+    if ind.get("price_drops_pct") is not None:
+        cuts = (ind["price_drops_pct"], ind.get("price_drops_yoy_pts"), "Redfin", rd)
+    else:
+        cuts = (ind.get("price_cut_share_pct"), ind.get("price_cut_share_yoy_pts"), "Realtor.com", rt)
+
+    if realtor_newer and ind.get("active_listings") is not None:
+        inv = (ind["active_listings"], ind.get("active_listings_yoy_pct"),
+               ind.get("active_listings_vs_2019_pct"), "Realtor.com", rt)
+        dom = (ind.get("listing_dom"), ind.get("listing_dom_yoy_days"), "Realtor.com", rt)
+    else:
+        inv = (ind.get("inventory"), ind.get("inventory_yoy_pct"),
+               ind.get("inventory_vs_2019_pct"), "Redfin", rd)
+        dom = (ind.get("median_dom"), ind.get("median_dom_yoy_days"), "Redfin", rd)
+
+    return {
+        **ind,
+        "cuts_pct": cuts[0], "cuts_yoy_pts": cuts[1], "cuts_source": cuts[2], "cuts_date": cuts[3],
+        "inv": inv[0], "inv_yoy_pct": inv[1], "inv_vs_2019_pct": inv[2],
+        "inv_source": inv[3], "inv_date": inv[4],
+        "dom": dom[0], "dom_yoy_days": dom[1], "dom_source": dom[2], "dom_date": dom[3],
+    }
+
+
 def market_signal(ind: dict) -> dict:
     """A plain-language read of buyer leverage from the leading indicators.
 
@@ -99,9 +167,9 @@ def market_signal(ind: dict) -> dict:
     # (label, value, threshold, unit, direction): direction +1 means a rise favors
     # buyers; -1 means a fall favors buyers (sale-to-list).
     checks = [
-        ("Price cuts vs a year ago", ind.get("price_drops_yoy_pts"), 2.0, "pts", 1),
-        ("Inventory vs a year ago", ind.get("inventory_yoy_pct"), 10.0, "%", 1),
-        ("Days on market vs a year ago", ind.get("median_dom_yoy_days"), 7.0, "days", 1),
+        ("Price cuts vs a year ago", ind.get("cuts_yoy_pts", ind.get("price_drops_yoy_pts")), 2.0, "pts", 1),
+        ("Inventory vs a year ago", ind.get("inv_yoy_pct", ind.get("inventory_yoy_pct")), 10.0, "%", 1),
+        ("Days on market vs a year ago", ind.get("dom_yoy_days", ind.get("median_dom_yoy_days")), 7.0, "days", 1),
         ("Sale-to-list vs a year ago", ind.get("sale_to_list_yoy_pts"), 0.5, "pts", -1),
     ]
     detail, score, counted = [], 0, 0

@@ -76,6 +76,31 @@ def zillow_forecast(path: Path, zips: set[str]) -> pd.DataFrame:
     }).reset_index(drop=True)
 
 
+REALTOR_KEEP = [
+    "active_listing_count", "new_listing_count", "pending_listing_count",
+    "price_reduced_count", "median_days_on_market", "median_listing_price",
+    "median_listing_price_per_square_foot",
+]
+
+
+def realtor_zip(path: Path, zips: set[str]) -> pd.DataFrame:
+    """Realtor.com monthly ZIP listing metrics, covered ZIPs only."""
+    with open_text(path) as fh:
+        df = pd.read_csv(fh, dtype={"postal_code": str, "month_date_yyyymm": str}, low_memory=False)
+    df.columns = [c.strip().lower() for c in df.columns]
+    # The file can end with a footnote row; drop anything that isn't a real month/ZIP.
+    df = df[df["month_date_yyyymm"].astype(str).str.fullmatch(r"\d{6}")
+            & df["postal_code"].astype(str).str.fullmatch(r"\d{1,5}")].copy()
+    df["zip"] = df["postal_code"].map(zip5)
+    df = df[df["zip"].isin(zips)]
+    out = df[["zip"]].copy()
+    out["date"] = pd.to_datetime(df["month_date_yyyymm"], format="%Y%m")
+    for c in REALTOR_KEEP:
+        out[c] = pd.to_numeric(df[c], errors="coerce") if c in df else pd.NA
+    out["price_reduced_share"] = out["price_reduced_count"] / out["active_listing_count"]
+    return out.sort_values(["zip", "date"]).drop_duplicates(["zip", "date"], keep="last").reset_index(drop=True)
+
+
 def redfin_zip(path: Path, zips: set[str], chunksize: int = 250_000,
                info: dict | None = None) -> pd.DataFrame:
     """Stream Redfin's ZIP tracker and keep covered ZIPs, monthly 90-day windows.

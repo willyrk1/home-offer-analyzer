@@ -1,0 +1,1876 @@
+
+===== sales.zip =====
+members: [('README.TXT', 285), ('sales_all.csv', 147074339), ('sales_last_10years.csv', 44956213)]
+--- README.TXT (sep ','); first line: b'sales_late_10years.csv \r\nListing of current sales from the past ten years from Pasco County.\r\nsales_all.csv\r\nListing of all known sales from Pasco County.\r\n\r\nDue to limitations within Excel, sales_all.csv data may cut off. It is recommended to import this data into Access\r\nor similar.'
+/home/runner/work/home-offer-analyzer/home-offer-analyzer/pipeline/probe_pasco.py:76: ParserWarning: Skipping line 6: expected 1 fields, saw 2
+
+  df = pd.read_csv(io.BytesIO(raw), sep=sep, dtype=str, low_memory=False,
+rows: 4   columns: 1
+columns: ['sales_late_10years.csv ']
+                                               sales_late_10years.csv 
+0  Listing of current sales from the past ten years from Pasco County.
+1                                                        sales_all.csv
+2                        Listing of all known sales from Pasco County.
+--- sales_all.csv (sep ','); first line: b'"Parcel_Num","Sale_Line_Num","Sale_Date","Sale_Price","Sale_VacImp","Sale_Qalified_Code","Sale_Qualified","Sale_Book","Sale_Page","Sale_Deed_Type"\r\n"01-25-14-0000-00100-0000","2","01/21/2016","0","I","11","U","9315","1372","QC"\r\n"01-25-14-0000-00100-0000","3","08/01/2009","0","I","18","U","8152","16'
+rows: 1,776,572   columns: 10
+columns: ['Parcel_Num', 'Sale_Line_Num', 'Sale_Date', 'Sale_Price', 'Sale_VacImp', 'Sale_Qalified_Code', 'Sale_Qualified', 'Sale_Book', 'Sale_Page', 'Sale_Deed_Type']
+                 Parcel_Num Sale_Line_Num   Sale_Date Sale_Price Sale_VacImp Sale_Qalified_Code Sale_Qualified Sale_Book Sale_Page Sale_Deed_Type
+0  01-25-14-0000-00100-0000             2  01/21/2016          0           I                 11              U      9315      1372             QC
+1  01-25-14-0000-00100-0000             3  08/01/2009          0           I                 18              U      8152      1651             AL
+2  01-25-14-0000-00100-0000             4  09/01/1991          0           I                  Q              Q      2055      1120             AL
+  Sale_Line_Num: 34 values -> 1=323544, 2=308543, 3=285222, 4=253864, 5=218110, 6=160287, 7=104539, 8=59502, 9=31844, 10=16504, 11=8467, 12=3714, 13=1306, 14=668, 15=251, 16=82, 17=36, 18=20, 19=13, 20=12, 21=9, 22=5, 23=4, 24=4, 25=3
+  Sale_VacImp: 2 values -> I=1027111, V=749397
+  Sale_Qalified_Code: 35 values -> Q=652216, U=341804, 01=283097, 11=239139, 05=128103, 12=48309, 14=34694, 03=20472, 16=6278, 19=5555, 18=5552, 33=3476, 37=2172, 17=1834, 30=1636, 40=614, 38=589, 35=226, 21=183, 06=138, 15=133, 39=130, 20=51, 36=32, 43=26
+  Sale_Qualified: 2 values -> Q=1044353, U=732217
+  Sale_Deed_Type: 43 values -> WD=1213087, QC=259947, CT=51584, TR=23795, IN=21093, OH=16970, PR=16089, FS=10682, CP=7498, TX=7400, DD=5054, AL=4743, PL=4484, AD=4355, PD=3592, FJ=1842, MR=1114, OT=667, AC=633, CD=583, GD=579, CN=496, AA=409, MD=261, UD=136
+--- sales_last_10years.csv (sep ','); first line: b'"Parcel_Num","Sale_Line_Num","Sale_Date","Sale_Price","Sale_VacImp","Sale_Qalified_Code","Sale_Qualified","Sale_Book","Sale_Page","Sale_Deed_Type"\r\n"01-25-14-0000-00100-0000","2","01/21/2016","0","I","11","U","9315","1372","QC"\r\n"01-25-14-0000-00100-0000","1","01/02/2018","0","I","18","U","9727","13'
+rows: 528,922   columns: 10
+columns: ['Parcel_Num', 'Sale_Line_Num', 'Sale_Date', 'Sale_Price', 'Sale_VacImp', 'Sale_Qalified_Code', 'Sale_Qualified', 'Sale_Book', 'Sale_Page', 'Sale_Deed_Type']
+                 Parcel_Num Sale_Line_Num   Sale_Date Sale_Price Sale_VacImp Sale_Qalified_Code Sale_Qualified Sale_Book Sale_Page Sale_Deed_Type
+0  01-25-14-0000-00100-0000             2  01/21/2016          0           I                 11              U      9315      1372             QC
+1  01-25-14-0000-00100-0000             1  01/02/2018          0           I                 18              U      9727      1352             AL
+2  01-25-14-0000-00300-0000             2  06/18/2019          0           I                 11              U      9931      3715             AL
+  Sale_Line_Num: 23 values -> 1=231988, 2=145993, 3=77859, 4=38298, 5=17437, 6=8542, 7=4177, 8=2152, 9=1399, 10=560, 11=265, 12=127, 13=89, 14=12, 15=7, 16=4, 17=3, 21=2, 20=2, 19=2, 18=2, 22=1, 23=1
+  Sale_VacImp: 2 values -> I=325241, V=203681
+  Sale_Qalified_Code: 33 values -> 01=213821, 11=148256, 05=95730, 14=28238, 03=18055, 12=8905, 19=3110, 16=2915, 33=2522, 18=2286, 37=1811, 30=1226, 17=818, 40=444, 38=173, 21=167, 06=124, 39=116, 35=72, 36=30, 43=23, 5=18, 20=15, 31=10, 32=10
+  Sale_Qualified: 2 values -> Q=290912, U=238008
+  Sale_Deed_Type: 30 values -> WD=399994, QC=78246, IN=16020, CT=7454, OH=7391, TR=5433, PD=2621, PR=2286, CP=2147, AL=1402, TX=1332, PL=1307, MR=1114, DD=801, FS=672, FJ=188, AD=144, OT=106, CD=97, GD=48, RD=26, MD=21, DC=13, AA=11, SD=10
+
+===== building.zip =====
+members: [('building.csv', 104211247)]
+--- building.csv (sep ','); first line: b'"Parcel_Num","Bldg_Num","Bldg_Section","Bldg_Style","Bldg_Style_Desc","Bldg_EffYrBlt","Bldg_ActYrBlt","Bldg_Bathrooms","Bldg_Use_Code","Bldg_Use_Desc","Bldg_Quality","Bldg_Quality_Desc","Bldg_ExtWall_1","Bldg_ExtWall_1_Desc","Bldg_ExtWall_2","Bldg_ExtWall_2_Desc","Bldg_Observerd_Condition","Bldg_Roo'
+rows: 276,643   columns: 39
+columns: ['Parcel_Num', 'Bldg_Num', 'Bldg_Section', 'Bldg_Style', 'Bldg_Style_Desc', 'Bldg_EffYrBlt', 'Bldg_ActYrBlt', 'Bldg_Bathrooms', 'Bldg_Use_Code', 'Bldg_Use_Desc', 'Bldg_Quality', 'Bldg_Quality_Desc', 'Bldg_ExtWall_1', 'Bldg_ExtWall_1_Desc', 'Bldg_ExtWall_2', 'Bldg_ExtWall_2_Desc', 'Bldg_Observerd_Condition', 'Bldg_Roof_Cover', 'Bldg_Roof_Cover_Desc', 'Bldg_Roof_Struct', 'Bldg_Roof_Structure_Desc', 'Bldg_AC_Type', 'Bldg_AC_Type_Desc', 'Bldg_Heat_Type', 'Bldg_Heat_Type_Desc', 'Bldg_Heat_System', 'Bldg_Heat_System_Desc', 'Bldg_Stories', 'Bldg_Floor_1', 'Bldg_Floor_1_Desc', 'Bldg_Floor_2', 'Bldg_Floor_2_Desc', 'Bldg_IntWall_1', 'Bldg_IntWall_1_Desc', 'Bldg_IntWall_2', 'Bldg_IntWall_2_Desc', 'Bldg_Total_Sqft', 'Bldg_Heated_Sqft', 'Bldg_Value']
+                 Parcel_Num Bldg_Num Bldg_Section Bldg_Style Bldg_Style_Desc Bldg_EffYrBlt Bldg_ActYrBlt Bldg_Bathrooms Bldg_Use_Code              Bldg_Use_Desc Bldg_Quality Bldg_Quality_Desc Bldg_ExtWall_1    Bldg_ExtWall_1_Desc Bldg_ExtWall_2 Bldg_ExtWall_2_Desc Bldg_Observerd_Condition Bldg_Roof_Cover Bldg_Roof_Cover_Desc Bldg_Roof_Struct Bldg_Roof_Structure_Desc Bldg_AC_Type Bldg_AC_Type_Desc Bldg_Heat_Type  Bldg_Heat_Type_Desc Bldg_Heat_System Bldg_Heat_System_Desc Bldg_Stories Bldg_Floor_1  Bldg_Floor_1_Desc Bldg_Floor_2 Bldg_Floor_2_Desc Bldg_IntWall_1 Bldg_IntWall_1_Desc Bldg_IntWall_2 Bldg_IntWall_2_Desc Bldg_Total_Sqft Bldg_Heated_Sqft Bldg_Value
+0  01-25-14-0000-00300-0000        1            1         01   Single Family          1960          1960             .0          0100  Single Family Residential            2     Below Average             03          Below Average             00                 NaN                      NaN              02   Rolled Composition               03             Gable or Hip           00               NaN             00                  NaN               00                   NaN          1.0           08  Pine or Soft Wood           00               NaN             01  Masonry or Minimum             00                 NaN            1344              800       9382
+1  01-25-14-0000-01000-0000        1            1         01   Single Family          1960          1960             .0          0100  Single Family Residential            2     Below Average             03          Below Average             00                 NaN                      NaN              02   Rolled Composition               03             Gable or Hip           00               NaN             00                  NaN               00                   NaN          1.0           08  Pine or Soft Wood           00               NaN             01  Masonry or Minimum             00                 NaN            1066              520       6395
+2  12-26-15-0010-00000-0020        1            1         01   Single Family          1993          1988            4.5          0100  Single Family Residential            5         Excellent             17  Concrete Block Stucco             00                 NaN                      NaN              12                Metal               03             Gable or Hip           02           Central             03  Forced Air - Ducted               03              Electric          2.0           11           Hardwood           13            Carpet             05             Drywall             00                 NaN            7722             4650     891233
+  Bldg_Section: 2 values -> 1=276634, 2=9
+  Bldg_Style: 8 values -> 01=211325, 02=34062, 05=11850, 94=9281, 03=3831, 95=3753, 96=1910, 06=631
+  Bldg_Style_Desc: 8 values -> Single Family=211325, Manufactured=34062, Res Condo=11850, Commercial=9294, Multi Family=3831, Metal Building=3753, Warehouse=1897, Com Condo=631
+  Bldg_Use_Code: 57 values -> 0100=186548, 0200=34062, 0700=23768, 0400=12481, 1100=2592, 4600=2160, 0800=2159, 0300=1643, 8000=1599, 1900=1167, 1600=1139, 1200=931, 1700=724, 4800=650, 8300=645, 2500=636, 7700=619, 7900=517, 7100=452, 9500=234, 2100=200, 2200=192, 8600=183, 7200=151, 1800=144
+  Bldg_Use_Desc: 57 values -> Single Family Residential=186548, Mobile Home=34062, Single Family Villa/Townhome=23768, Condominium=12481, Retail Stores (One Story)=2592, Metal Bldg Misc=2160, Multi Family (<5 Units/ Bldg)=2159, Multi Family (5+ Units/Bldg)=1643, Metal Buildings=1599, Offices Professional/Medical=1167, Shopping Center Local=1139, Stores / Office SFR=931, Offices (One Story)=724, Warehouses, Block=650, Schools, Public=645, Service Shops=636, Clubs, Lodges, Halls=619, Warehouses, Mini Storage=517, Churches=452, Convenience Stores=234, Restaurants (Full Service)=200, Restaurants (Fast Food)=192, County Buildings=183, Schools, Colleges, Private=151, Offices (Multi Story)=144
+  Bldg_Quality: 6 values -> 5=129991, 4=83572, 3=56353, 2=6221, 1=502, 0=4
+  Bldg_Quality_Desc: 5 values -> Excellent=129991, Above Average=83572, Average=56353, Below Average=6221, Minimum/Low Cost=502
+  Bldg_ExtWall_1: 35 values -> 17=171919, 16=32854, 10=30944, 27=13124, 15=10545, 05=6558, 25=4025, 26=1969, 19=928, 01=749, 12=551, 31=344, 07=285, 33=243, 23=239, 03=180, 32=154, 22=145, 11=144, 29=129, 06=120, 18=89, 08=85, 34=55, 21=50
+  Bldg_ExtWall_1_Desc: 34 values -> Concrete Block Stucco=171919, Tile or Wood Frame Stucco=32854, Above Average=30944, Pre-Finished Metal=13124, Concrete or Cinder Block=10545, Average=6558, Modular Metal=4025, Aluminum Siding=1969, Common Brick=928, Minimum=749, Cedar or Redwood Siding=551, Cut Block=344, Asbestos Shingle=285, EIFS=243, Reinforced Concrete=239, Below Average=180, Tilt-Up=154, Precast Panel=145, Board & Batten (Above Avg)=144, Pine=129, Board & Batten (Average)=120, Cement Brick=89, Wood on Sheathing or Plywood=85, Polyfoam=55, Stone=50
+  Bldg_ExtWall_2: 35 values -> 00=219050, 17=35378, 16=6019, 10=3251, 15=1318, 19=641, 21=276, 05=202, 31=167, 26=90, 28=62, 25=57, 33=43, 20=41, 18=38, 27=34, 22=31, 11=15, 01=13, 12=13, 32=12, 14=11, 07=11, 34=10, 23=8
+  Bldg_ExtWall_2_Desc: 34 values -> Concrete Block Stucco=35378, Tile or Wood Frame Stucco=6019, Above Average=3251, Concrete or Cinder Block=1318, Common Brick=641, Stone=276, Average=202, Cut Block=167, Aluminum Siding=90, Glass/Thermopane=62, Modular Metal=57, EIFS=43, Face Brick=41, Cement Brick=38, Pre-Finished Metal=34, Precast Panel=31, Board & Batten (Above Avg)=15, Minimum=13, Cedar or Redwood Siding=13, Tilt-Up=12, Wood Shingle=11, Asbestos Shingle=11, Polyfoam=10, Reinforced Concrete=8, Below Average=7
+  Bldg_Observerd_Condition: 6 values -> AP=2218, AT=1688, AM=48, RV=15, UC=4, DI=1
+  Bldg_Roof_Cover: 13 values -> 03=220067, 01=22796, 07=10772, 12=10632, 04=7926, 05=2752, 02=1324, 08=169, 09=153, 10=24, 06=24, 11=3, 00=1
+  Bldg_Roof_Cover_Desc: 12 values -> Asphalt or Composition Shingle=220067, Min Roof(Corr. or Sh M)=22796, Concrete Tile=10772, Metal=10632, Built-Up Tar and Gravel=7926, Membrane=2752, Rolled Composition=1324, Clay or Bermuda Tile=169, Enamel Metal Shingle=153, Wood Shingle=24, Asbestos Shingle=24, Slate=3
+  Bldg_Roof_Struct: 14 values -> 03=248987, 01=13265, 10=4747, 09=4705, 08=3248, 06=844, 02=392, 04=169, 12=143, 07=101, 13=22, 11=10, 05=4, 00=4
+  Bldg_Roof_Structure_Desc: 13 values -> Gable or Hip=248987, Flat=13265, Steel Frame or Truss=4747, Rigid Frame w/Bar Joist=4705, Irregular=3248, Mansard=844, Shed=392, Wood Truss=169, Reinforced Concrete=143, Gambrel=101, Prestress Concrete=22, Bowstring Truss=10, Sawtooth=4
+  Bldg_AC_Type: 5 values -> 02=228102, 00=40084, 01=4799, 03=3549, 04=50
+  Bldg_AC_Type_Desc: 4 values -> Central=228102, Window Unit=4799, Packaged Roof Top=3549, Chilled Water=50
+  Bldg_Heat_Type: 7 values -> 03=263893, 00=6666, 01=2391, 02=2087, 06=1558, 3=1, 04=1
+  Bldg_Heat_Type_Desc: 5 values -> Forced Air - Ducted=263893, Convection=2391, Forced Air - Not Ducted=2087, Radiant Electric=1558, Hot Water=1
+  Bldg_Heat_System: 6 values -> 03=263076, 00=6626, 02=5984, 01=900, 04=9, 1=1
+  Bldg_Heat_System_Desc: 4 values -> Electric=263076, Gas=5984, Oil=900, Solar=9
+  Bldg_Stories: 18 values -> 1.0=217128, 2.0=58348, 3.0=719, 1.5=232, 4.0=153, 2.5=11, 5.0=11, 6.0=8, 0=7, 3.5=6, 0.0=6, 01=4, 8.0=2, 7.0=2, 02=2, 1=2, 4.5=1, 17=1
+  Bldg_Floor_1: 22 values -> 10=110863, 06=68304, 13=49212, 07=21353, 02=6832, 09=5468, 11=3665, 20=3423, 08=2972, 04=2833, 19=647, 05=278, 01=225, 14=185, 00=159, 12=132, 03=42, 15=20, 17=14, 18=7, 100=5, 16=4
+  Bldg_Floor_1_Desc: 20 values -> Ceramic Clay Tile=110863, Cork or Vinyl Tile=68304, Carpet=49212, Sheet Vinyl=21353, Finished Concrete=6832, Terrazzo Monolithic=5468, Hardwood=3665, Laminate=3423, Pine or Soft Wood=2972, Asphalt Tile=2833, VCT=647, Vinyl Asbestos=278, Minimum, Plywood, Linoleum=225, Quarry or Hard Tile=185, Parquet=132, Above Grade Concrete=42, Terrazzo Epoxy Strip=20, Slate=14, Marble=7, Precast Concrete=4
+  Bldg_Floor_2: 22 values -> 13=201508, 00=61916, 10=5917, 20=2694, 14=1045, 11=827, 12=432, 07=404, 19=289, 06=262, 02=77, 18=54, 08=46, 09=32, 03=32, 04=31, 17=21, 15=8, 01=8, 16=4, 05=2, 3=1
+  Bldg_Floor_2_Desc: 20 values -> Carpet=201508, Ceramic Clay Tile=5917, Laminate=2694, Quarry or Hard Tile=1045, Hardwood=827, Parquet=432, Sheet Vinyl=404, VCT=289, Cork or Vinyl Tile=262, Finished Concrete=77, Marble=54, Pine or Soft Wood=46, Terrazzo Monolithic=32, Above Grade Concrete=32, Asphalt Tile=31, Slate=21, Terrazzo Epoxy Strip=8, Minimum, Plywood, Linoleum=8, Precast Concrete=4, Vinyl Asbestos=2
+  Bldg_IntWall_1: 7 values -> 05=211704, 03=31900, 04=24033, 01=6567, 02=1983, 06=449, 00=7
+  Bldg_IntWall_1_Desc: 6 values -> Drywall=211704, Plastered=31900, Plywood Panel=24033, Masonry or Minimum=6567, Wall Board or Wood Wall=1983, Wood Panel or Custom=449
+  Bldg_IntWall_2: 8 values -> 00=260767, 05=793, 06=298, 04=240, 03=24, 01=16, 02=8, `0=1
+  Bldg_IntWall_2_Desc: 6 values -> Drywall=793, Wood Panel or Custom=298, Plywood Panel=240, Plastered=24, Masonry or Minimum=16, Wall Board or Wood Wall=8
+
+===== extrafeatures.zip =====
+members: [('extrafeatures.csv', 80935391)]
+--- extrafeatures.csv (sep ','); first line: b'"Parcel_Num","XF_Line_Num","XF_Code","XF_Desc","XF_Unit_Type","XF_Units","XF_Value","Bldg_Num","XF_Year"\r\n"12-26-15-0000-00300-0040","1","RDWSWC","DRVWAY/SIDEWALK CONC","UNITS","1600.00","792.00","1","1988"\r\n"12-26-15-0000-00300-0040","2","RDOCKF","DOCK FLOATING","UNITS","1.00","215.00","1","1988"\r\n'
+rows: 833,688   columns: 9
+columns: ['Parcel_Num', 'XF_Line_Num', 'XF_Code', 'XF_Desc', 'XF_Unit_Type', 'XF_Units', 'XF_Value', 'Bldg_Num', 'XF_Year']
+                 Parcel_Num XF_Line_Num  XF_Code               XF_Desc XF_Unit_Type XF_Units XF_Value Bldg_Num XF_Year
+0  12-26-15-0000-00300-0040           1   RDWSWC  DRVWAY/SIDEWALK CONC        UNITS  1600.00   792.00        1    1988
+1  12-26-15-0000-00300-0040           2   RDOCKF         DOCK FLOATING        UNITS     1.00   215.00        1    1988
+2  12-26-15-0000-00300-0040           3  RFIREPL             FIREPLACE        UNITS     1.00   602.00        1    1988
+  XF_Unit_Type: 1 values -> UNITS=833688
+
+===== parcel.zip =====
+members: [('parcel.csv', 53873391)]
+--- parcel.csv (sep ','); first line: b'"Parcel_Num","Tax_Area","Prop_Use_Code","Prop_Use_Desc","NBHD_Code","Hmstd","TotSqFt","HstSqFt","Acres","Just_Value","County_Assessed","County_Exemptions","County_Taxable","School_Assessed","School_Exemptions","School_Taxable","NBHD_Desc"\r\n"33-24-16-0090-00000-0470","UF","00100","Single Family","HUB'
+rows: 327,653   columns: 17
+columns: ['Parcel_Num', 'Tax_Area', 'Prop_Use_Code', 'Prop_Use_Desc', 'NBHD_Code', 'Hmstd', 'TotSqFt', 'HstSqFt', 'Acres', 'Just_Value', 'County_Assessed', 'County_Exemptions', 'County_Taxable', 'School_Assessed', 'School_Exemptions', 'School_Taxable', 'NBHD_Desc']
+                 Parcel_Num Tax_Area Prop_Use_Code  Prop_Use_Desc NBHD_Code Hmstd TotSqFt  HstSqFt   Acres Just_Value County_Assessed County_Exemptions County_Taxable School_Assessed School_Exemptions School_Taxable             NBHD_Desc
+0  33-24-16-0090-00000-0470       UF         00100  Single Family      HUBE   YES    1444  1084.00  0.1148     229039          138990             56411          82579          138990             30000         108990  HUDSON BEACH ESTATES
+1  33-24-16-0090-00000-0490       UF         00100  Single Family      HUBE    NO    1298  1138.00  0.1148     231527          229210                 0         229210          231527                 0         231527  HUDSON BEACH ESTATES
+2  33-24-16-0090-00000-0500       UF         00000         Vacant      HUBE    NO       0      .00  0.1148      89975           89975                 0          89975           89975                 0          89975  HUDSON BEACH ESTATES
+  Tax_Area: 8 values -> UF=298693, ZH=10380, NP=7791, DC=6479, PR=2167, U=1114, SA=906, SL=123
+  Hmstd: 2 values -> YES=172035, NO=155618
+
+===== land.zip =====
+members: [('land.csv', 62451257)]
+--- land.csv (sep ','); first line: b'"Parcel_Num","Land_Line_Num","Land_Use_Code","Land_Use_Desc","Land_Zoning","Land_Zoning_Desc","Land_Units","Land_Units_Type","Land_Units_Type_Desc","Land_Lot_Type","Land_Lot_Type_Desc","Land_Unit_Price","Land_Assessed_Value"\r\n"01-25-14-0000-00100-0000","1","9000","Leasehold Interest","00AC","00AC","'
+rows: 543,767   columns: 13
+columns: ['Parcel_Num', 'Land_Line_Num', 'Land_Use_Code', 'Land_Use_Desc', 'Land_Zoning', 'Land_Zoning_Desc', 'Land_Units', 'Land_Units_Type', 'Land_Units_Type_Desc', 'Land_Lot_Type', 'Land_Lot_Type_Desc', 'Land_Unit_Price', 'Land_Assessed_Value']
+                 Parcel_Num Land_Line_Num Land_Use_Code       Land_Use_Desc Land_Zoning Land_Zoning_Desc Land_Units Land_Units_Type Land_Units_Type_Desc Land_Lot_Type Land_Lot_Type_Desc Land_Unit_Price Land_Assessed_Value
+0  01-25-14-0000-00100-0000             1          9000  Leasehold Interest        00AC             00AC      1.000              UN                 Unit           NaN                NaN        16500.00            16500.00
+1  01-25-14-0000-00300-0000             1          9000  Leasehold Interest        00AC             00AC      1.000              UN                 Unit           NaN                NaN        16500.00            16500.00
+2  01-25-14-0000-00400-0000             1          9000  Leasehold Interest        00AC             00AC      1.000              UN                 Unit           NaN                NaN        16500.00            16500.00
+  Land_Line_Num: 12 values -> 1=327648, 2=185435, 3=24194, 4=5041, 5=1117, 6=230, 7=56, 8=27, 9=10, 10=5, 11=2, 12=2
+  Land_Units_Type: 4 values -> SF=455434, AC=54251, UN=29567, LT=4515
+  Land_Units_Type_Desc: 4 values -> Square Feet=455434, Acre=54251, Unit=29567, Lot=4515
+  Land_Lot_Type: 2 values -> A=6391, C=104
+  Land_Lot_Type_Desc: 2 values -> Ag Use=6391, Conservation=104
+
+===== site_addresses.zip =====
+members: [('site_addresses.csv', 30686884)]
+--- site_addresses.csv (sep ','); first line: b'"PARCEL","ADDRESS_NUMBER","STREET_NAME","STREET_SUFFIX","CITY","ZIP_CODE","UNIT_TYPE","UNIT_IDENTIFIER"\r\n"15-26-19-0110-02800-0040","4511","WINDING RIVER","WAY","LAND O LAKES","34639","",""\r\n"02-26-21-0250-00000-0120","6808","OAKCREST","WAY","ZEPHYRHILLS","33542","",""\r\n"30-25-22-0000-01700-0060","8'
+rows: 365,653   columns: 8
+columns: ['PARCEL', 'ADDRESS_NUMBER', 'STREET_NAME', 'STREET_SUFFIX', 'CITY', 'ZIP_CODE', 'UNIT_TYPE', 'UNIT_IDENTIFIER']
+masked (name/mailing-like): ['STREET_NAME']
+                     PARCEL ADDRESS_NUMBER STREET_SUFFIX          CITY ZIP_CODE UNIT_TYPE UNIT_IDENTIFIER
+0  15-26-19-0110-02800-0040           4511           WAY  LAND O LAKES    34639       NaN             NaN
+1  02-26-21-0250-00000-0120           6808           WAY   ZEPHYRHILLS    33542       NaN             NaN
+2  30-25-22-0000-01700-0060           8606          ROAD   ZEPHYRHILLS    33540       NaN             NaN
+  STREET_SUFFIX: 47 values -> DRIVE=115893, LANE=39004, ROAD=28723, AVENUE=26405, STREET=26198, COURT=24328, WAY=20535, LOOP=19446, BOULEVARD=15405, CIRCLE=14785, PLACE=8781, TRAIL=4194, TERRACE=2650, RUN=1557, PARKWAY=1522, BEND=1123, POINT=1065, PASS=1043, TRACE=979, ISLE=810, COVE=723, SQUARE=575, ROW=510, HIGHWAY=499, PATH=415
+  CITY: 25 values -> NEW PORT RICHEY=74205, WESLEY CHAPEL=57938, ZEPHYRHILLS=46819, LAND O LAKES=40121, HUDSON=31758, PORT RICHEY=26242, DADE CITY=22638, HOLIDAY=20714, LUTZ=13738, SAN ANTONIO=10780, SPRING HILL=9832, ODESSA=9660, Dade City=486, New Port Richey=206, Land O Lakes=197, Zephyrhills=179, WEBSTER=49, Wesley Chapel=35, KATHLEEN=30, Hudson=10, BROOKSVILLE=6, Lutz=6, Port Richey=2, Odessa=1, San Antonio=1
+  ZIP_CODE: 30 values -> 34668=26244, 34655=24634, 33543=23629, 34667=22991, 33541=22930, 34638=21261, 33545=18844, 34653=18483, 34652=17577, 33542=15791, 33544=15502, 33525=14875, 34654=13717, 34691=12847, 34639=11969, 33576=10781, 34610=9833, 33556=9661, 34669=8777, 33540=8275, 33523=8249, 34690=7867, 34637=7088, 33559=5513, 33558=5338
+  UNIT_TYPE: 6 values -> UNIT=30370, APT=15479, SUITE=1281, LOT=606, SPACE=3, SLIP=3
+
+===== subarea.zip =====
+members: [('subarea.csv', 73359998)]
+--- subarea.csv (sep ','); first line: b'"Parcel_Num","Bldg_Num","SubAreaCode","SubArea_Desc","SubArea_Sqft","SubArea_Value"\r\n"01-25-14-0000-00100-0000","1","BAS01","LIVING AREA","616","12349"\r\n"01-25-14-0000-00100-0000","1","CAN01","CANOPY","475","2386"\r\n"01-25-14-0000-00100-0000","1","UST01","UNFINISHED STORAGE","85","682"\r\n"01-25-14-000'
+rows: 997,990   columns: 6
+columns: ['Parcel_Num', 'Bldg_Num', 'SubAreaCode', 'SubArea_Desc', 'SubArea_Sqft', 'SubArea_Value']
+                 Parcel_Num Bldg_Num SubAreaCode        SubArea_Desc SubArea_Sqft SubArea_Value
+0  01-25-14-0000-00100-0000        1       BAS01         LIVING AREA          616         12349
+1  01-25-14-0000-00100-0000        1       CAN01              CANOPY          475          2386
+2  01-25-14-0000-00100-0000        1       UST01  UNFINISHED STORAGE           85           682
+  SubArea_Desc: 56 values -> LIVING AREA=277885, FINISHED OPEN PORCH=204460, FINISHED GARAGE=173818, FINISHED SCREENED PORCH=58383, FINISHED UPPER STORY=57909, FINISHED SCREENED ALUM PORCH=28314, FINISHED OPEN ALUM PORCH=25348, FINISHED STORAGE=25290, FINISHED ENCL PORCH=22728, FINISHED ALUM CARPORT=16622, UNFINISHED GARAGE=15367, FINISHED ENCL ALUM PORCH=12503, CANOPY=10816, UNFINISHED ENCL PORCH=10794, UNFINISHED STORAGE=9653, UNFINISHED ENCL ALUM PORCH=8686, UNFINISHED OPEN PORCH=7208, FINISHED CABANA=4925, UNFINISHED OPEN ALUM PORCH=4468, FINISHED CARPORT=3760, UNFINISHED DET GARAGE=2743, AVERAGE OFFICE=2154, FINISHED DET GARAGE=1983, UNFINISHED DET UTILITY=1936, UNFINISHED SCREENED PORCH=1722
+
+===== subdivision_index.zip =====
+members: [('subdivision_index.csv', 354720)]
+--- subdivision_index.csv (sep ','); first line: b'"SUB_ID","SUB_TYPE","BOOK","PAGE","NAME","UNIT"\r\n"08-24-20-0030","PB","72","033","HALL SUBDIVISION",""\r\n"25-24-19-0020","PB","66","118","AUSTIN WOODS REPLAT",""\r\n"25-24-19-0010","UR","","","HOLIDAY ACRES",""\r\n"31-24-20-0010","PB","57","144","DARBY ESTATES",""\r\n"08-24-20-0020","PB","29","36","BAYHEAD'
+rows: 5,564   columns: 6
+columns: ['SUB_ID', 'SUB_TYPE', 'BOOK', 'PAGE', 'NAME', 'UNIT']
+masked (name/mailing-like): ['NAME']
+          SUB_ID SUB_TYPE BOOK PAGE UNIT
+0  08-24-20-0030       PB   72  033  NaN
+1  25-24-19-0020       PB   66  118  NaN
+2  25-24-19-0010       UR  NaN  NaN  NaN
+  SUB_TYPE: 10 values -> PB=4797, UR=376, CB=228, OR=154, or=3, Pb=2, RB=1, DB=1, PR=1, PG=1
+
+===== https://downloads.pascopa.com/metadata/ =====
+download failed: HTTP Error 403: Forbidden
+
+===== https://ftp01.pascopa.com/misc/Code_Descriptions.xlsx =====
+--- sheet DOR Class (Property Use): 120 rows; columns ['CODE', 'DESCRIPTION']
+      CODE                  DESCRIPTION
+0    00000                       Vacant
+1    00100                Single Family
+2    00200                  Mobile Home
+3    00300                  Multifamily
+4    00400                  Condominium
+5    00500                  Cooperative
+6    00600                   Retirement
+7    00700              Misc. Residence
+8    00800                Mfr <10 Units
+9    00900                  Common Area
+10   01000                  Vacant Comm
+11   01100                       Stores
+12   01200                Store/Off/Res
+13   01300                   Dept Store
+14   01400                  Supermarket
+15   01500              Sh Ctr Regional
+16   01600                Sh Ctr Cmmity
+17   01700               Office 1 Story
+18   01800               Off Multistory
+19   01900                 Prof Offices
+20   02000                      Airport
+21   02100                   Restaurant
+22   02200                Rest Drive-In
+23   02300                    Financial
+24   02400                    Insurance
+25   02500                Service Shops
+26   02600                Serv Stations
+27   02700                   Auto Sales
+28   02800               Pkg Lot (Comm)
+29   02900                   Wholesaler
+30   03000                      Florist
+31   03100               Drv-In Theater
+32   03200                      Theater
+33   03300                  Night Clubs
+34   03400                Bowling Alley
+35   03500           Tourist Attraction
+36   03600                        Camps
+37   03700                    Racetrack
+38   03800                  Golf Course
+39   03900                        Motel
+40   04000            Vacant Industrial
+41   04100                    Light Mfg
+42   04200                    Heavy Mfg
+43   04300               Lumber Yd/Mill
+44   04400                      Packing
+45   04500                      Bottler
+46   04600              Food Processing
+47   04700               Min Processing
+48   04800              Wareh/Dist Term
+49   04900                 Open Storage
+50   05000                Improved Agri
+51   05100              Cropsoil Class1
+52   05200              Cropsoil Class2
+53   05300              Cropsoil Class3
+54   05400                  Tmbr Si 90+
+55   05500                Tmbr Si 80-89
+56   05600                Tmbr Si 70-79
+57   05700                Tmbr Si 60-69
+58   05800                Tmbr Si 50-59
+59   05900              Tmbr Not Clssfd
+60   06000              Grzgsoil Class1
+61   06100              Grzgsoil Class2
+62   06200              Grzgsoil Class3
+63   06300              Grzgsoil Class4
+64   06400              Grzgsoil Class5
+65   06500              Grzgsoil Class6
+66   06600               Orchard Groves
+67   06700               Poul/Bees/Fish
+68   06800              Dairies/Feedlts
+69   06900                Orn/Misc Agri
+70   07000         Vacant Institutional
+71   07100                     Churches
+72   07200                Prv Schl/Coll
+73   07300                 Prv Hospital
+74   07400                 Nursing Home
+75   07500              Orphng/Non-Prof
+76   07600                Mort/Cemetery
+77   07700              Clb/Ldg/Un Hall
+78   07800  Inpatient/Outpatient Clinic
+79   07900                     Cultural
+80   08000     Water Mgt Dist Vac/Xfeat
+81   08010      County Vacant/Xfeatures
+82   08020       State(Not Tiitf)vac/Xf
+83   08030       State(Tiitf) Vacant/Xf
+84   08040     Federal Vacant/Xfeatures
+85   08050    Municipal Vacant/Xfeature
+86   08090    Other Public Vac/Xfeature
+87   08100                     Military
+88   08200    Forest/Pk/Rec-Wtr Mgt Dst
+89   08210         Forest/Pk/Rec-County
+90   08220    Forest/Pk/Rec-St No Tiitf
+91   08230    Forest/Pk/Rec-State Tiitf
+92   08240        Forest/Pk/Rec-Federal
+93   08250      Forest/Pk/Rec-Municipal
+94   08290    Forest/Pk/Rec-Otherpublic
+95   08300               Pub Cty School
+96   08400         College-Wtr Mgt Dist
+97   08410               College-County
+98   08420     College-State(Not Tiitf)
+99   08430         College-State(Tiitf)
+100  08440              College-Federal
+101  08450    College-Municipal/City/Tw
+102  08490         College-Other Public
+103  08500                     Hospital
+104  08600              Cty Inc Nonmuni
+105  08700              State-Not Tiitf
+106  08710        Water Management Dist
+107  08800                      Federal
+108  08900                    Municipal
+109  09000                Leasehold Int
+110  09100                      Utility
+111  09110    Railroad Owned-Local Assd
+112  09200              Ming/Pet/Gaslnd
+113  09300               Subsurf Rights
+114  09400                 Right-Of-Way
+115  09500                 Rivers/Lakes
+116  09600              Sewg/Waste Land
+117  09700              Outdr Rec/Pk Ld
+118  09800               Centrally Assd
+119  09900              Acrg Not Znd Ag
+--- sheet Real Property Exemption: 74 rows; columns ['CODE', 'DESCRIPTION']
+    CODE                                      DESCRIPTION
+0   0101                                        Homestead
+1   0102                              Homestead - Partial
+2   0103                           Homestead - Contiguous
+3   0201                             Additional Homestead
+4   0202                   Additional Homestead - Partial
+5   0203                Additional Homestead - Contiguous
+6   0301                       Additional Senior - County
+7   0401                 Additional Senior - Municipality
+8   0501                  Permanent Disabled Vet & Spouse
+9   0502         Permanent Disabled Vet & Spouse -Partial
+10  0601                   Veteran Confined to Wheelchair
+11  0602         Veteran Confined to Wheelchair - Partial
+12  0701                    Child Care in Enterprise Zone
+13  0801                  Total Disability N/V Income Reg
+14  0802        Total Disability N/V Income Reg - Partial
+15  0803                Total Disability N/V Quadriplegic
+16  0901                              Literary  Exemption
+17  0902                                       Benevolent
+18  0903                                       Charitable
+19  0904                                       Scientific
+20  0905                                        Parsonage
+21  0906                                      Educational
+22  0907                                           Church
+23  0908                                         Cemetery
+24  0910                                        Religious
+25  1001                     Historic Commercial - County
+26  1101               Historic Commercial - Municipality
+27  1201                              Non-Profit Hospital
+28  1202                   Nursing Home & Special Service
+29  1301                         Home for Aged Non-Profit
+30  1401                       Continuing Care Facilities
+31  1501                               Affordable Housing
+32  1502                           Affordable Housing 50%
+33  1601                                Private Education
+34  1602                                 Public Education
+35  1701                                  Charter Schools
+36  1801                              Labor Organizations
+37  1901                                 Community Center
+38  1902                                             YMCA
+39  2000                          Governmental Conversion
+40  2001                                      County Land
+41  2002                                Municipality Land
+42  2003                                       State Land
+43  2004                                     Federal Land
+44  2005                             Internal Improvement
+45  2006                         Miscellaneous & Railroad
+46  2007                        Park & Recreation - State
+47  2008        Leasehold Interest in Government Property
+48  2101         Certain Agreements with Local Government
+49  2201                    Economic Development - County
+50  2301              Economic Development - Municipality
+51  2401                     Historic Properties - County
+52  2501               Historic Properties - Municipality
+53  2601  Additional Historic Open to the Public - County
+54  2701    Additional Historic Open to the Public - Muni
+55  2901                         Non-Profit Sewer & Water
+56  3001                         Non-Profit Sewer & Water
+57  3101                                            Blind
+58  3201                                          Widower
+59  3301                                            Widow
+60  3401                            Additional Disability
+61  3501                               Veteran Disability
+62  3502              Veteran Surviving Spouse 10 percent
+63  3601                      Perpetual Conservation Full
+64  3701                Perpetual Conservation Ex Portion
+65  3801                         Deployed Service Members
+66  3901                  Super Senior Exemption - County
+67  4001            Super Senior Exemption - Municipality
+68  4101                                  First Responder
+69  4102         First Responder Surviving Spouse - T & P
+70  4103      First Responder Carryover Surviving Spouse 
+71  8001                        Combat Veteran Discount %
+72  8101               Reduction for Parents/Grandparents
+73  8201                         Land Available for Taxes
+--- sheet Sales Instrument: 32 rows; columns ['CODE', 'DESCRIPTION']
+   CODE                               DESCRIPTION
+0    AA          Assignment of Agreement for Deed
+1    AC           Assignment of Contract for Deed
+2    AD                        Agreement For Deed
+3    AF                                 Affidavit
+4    AL           Assignment of Lease or Interest
+5    CD                         Contract for Deed
+6    CN                                Condo Deed
+7    CP                           Probate (Civil)
+8    CT                      Certificate of Title
+9    DC                         Death Certificate
+10   DD  Personal Representative's Distributive D
+11   EX                             Exchange Deed
+12   FJ                            Final Judgment
+13   FS                           Fee Simple Deed
+14   GD                             Guardian Deed
+15   IN                                 Indenture
+16   LA                           Lease Agreement
+17   MD                     Special Master's Deed
+18   MR        Mineral Rights or Royalty Transfer
+19   OH   Order determining Homestead Real Estate
+20   OT                           Order of Taking
+21   PD                           Plat Dedication
+22   PL                         Proprietary Lease
+23   PR  Executor's Deed (Personal Representative
+24   QC                           Quit Claim Deed
+25   RD                           Receiver's Deed
+26   SD                            Sheriff's Deed
+27   TR                            Trustee's Deed
+28   TX                                  Tax Deed
+29   UD                                 Unit Deed
+30   US                        United States Deed
+31   WD                             Warranty Deed
+--- sheet Exterior Wall: 35 rows; columns ['CODE', 'DESCRIPTION']
+   CODE                   DESCRIPTION
+0     0                           NaN
+1     1                       Minimum
+2     2     Composition or Wall Board
+3     3                 Below Average
+4     4                Shingle Siding
+5     5                       Average
+6     6      Board & Batten (Average)
+7     7              Asbestos Shingle
+8     8  Wood on Sheathing or Plywood
+9     9   Corrugated Asbestos (Wd Fr)
+10   10                 Above Average
+11   11    Board & Batten (Above Avg)
+12   12       Cedar or Redwood Siding
+13   13             Prefab Wood Panel
+14   14                  Wood Shingle
+15   15      Concrete or Cinder Block
+16   16     Tile or Wood Frame Stucco
+17   17         Concrete Block Stucco
+18   18                  Cement Brick
+19   19                  Common Brick
+20   20                    Face Brick
+21   21                         Stone
+22   22                 Precast Panel
+23   23           Reinforced Concrete
+24   24              Corrugated Metal
+25   25                 Modular Metal
+26   26               Aluminum Siding
+27   27            Pre-Finished Metal
+28   28              Glass/Thermopane
+29   29                          Pine
+30   30                         Cedar
+31   31                     Cut Block
+32   32                       Tilt-Up
+33   33                          EIFS
+34   34                      Polyfoam
+--- sheet Roof Structure: 14 rows; columns ['CODE', 'DESCRIPTION']
+   CODE              DESCRIPTION
+0     0                      NaN
+1     1                     Flat
+2     2                     Shed
+3     3             Gable or Hip
+4     4               Wood Truss
+5     5                 Sawtooth
+6     6                  Mansard
+7     7                  Gambrel
+8     8                Irregular
+9     9  Rigid Frame w/Bar Joist
+10   10     Steel Frame or Truss
+11   11          Bowstring Truss
+12   12      Reinforced Concrete
+13   13       Prestress Concrete
+--- sheet Roof Cover: 13 rows; columns ['CODE', 'DESCRIPTION']
+   CODE                     DESCRIPTION
+0     0                             NaN
+1     1         Min Roof(Corr. or Sh M)
+2     2              Rolled Composition
+3     3  Asphalt or Composition Shingle
+4     4         Built-Up Tar and Gravel
+5     5                        Membrane
+6     6                Asbestos Shingle
+7     7                   Concrete Tile
+8     8            Clay or Bermuda Tile
+9     9            Enamel Metal Shingle
+10   10                    Wood Shingle
+11   11                           Slate
+12   12                           Metal
+--- sheet Interior Wall: 7 rows; columns ['CODE', 'DESCRIPTION']
+  CODE              DESCRIPTION
+0    0                      NaN
+1    1       Masonry or Minimum
+2    2  Wall Board or Wood Wall
+3    3                Plastered
+4    4            Plywood Panel
+5    5                  Drywall
+6    6     Wood Panel or Custom
+--- sheet Interior Floor: 21 rows; columns ['CODE', 'DESCRIPTION']
+   CODE                 DESCRIPTION
+0     0                         NaN
+1     1  Minimum, Plywood, Linoleum
+2     2           Finished Concrete
+3     3        Above Grade Concrete
+4     4                Asphalt Tile
+5     5              Vinyl Asbestos
+6     6          Cork or Vinyl Tile
+7     7                 Sheet Vinyl
+8     8           Pine or Soft Wood
+9     9         Terrazzo Monolithic
+10   10           Ceramic Clay Tile
+11   11                    Hardwood
+12   12                     Parquet
+13   13                      Carpet
+14   14         Quarry or Hard Tile
+15   15        Terrazzo Epoxy Strip
+16   16            Precast Concrete
+17   17                       Slate
+18   18                      Marble
+19   19                         VCT
+20   20                    Laminate
+--- sheet Fuel Type: 5 rows; columns ['CODE', 'DESCRIPTION']
+  CODE DESCRIPTION
+0    0         NaN
+1    1         Oil
+2    2         Gas
+3    3    Electric
+4    4       Solar
+--- sheet Heat Type: 8 rows; columns ['CODE', 'DESCRIPTION']
+  CODE              DESCRIPTION
+0    0                      NaN
+1    1               Convection
+2    2  Forced Air - Not Ducted
+3    3      Forced Air - Ducted
+4    4                Hot Water
+5    5                    Steam
+6    6         Radiant Electric
+7    7            Radiant Water
+--- sheet AC Type: 5 rows; columns ['CODE', 'DESCRIPTION']
+  CODE        DESCRIPTION
+0    0                NaN
+1    1        Window Unit
+2    2            Central
+3    3  Packaged Roof Top
+4    4      Chilled Water
+--- sheet Subarea Descriptions: 59 rows; columns ['CODE', 'DESCRIPTION']
+   CODE                           DESCRIPTION
+0   AOF                        AVERAGE OFFICE
+1   APT                             APARTMENT
+2   BAS                           LIVING AREA
+3   CAN                                CANOPY
+4   CDN                       DETACHED CANOPY
+5   CLP                 COMM LOADING PLATFORM
+6   CSC                     CONV STORE CANOPY
+7   FAT                        FINISHED ATTIC
+8   FBM                     FINISHED BASEMENT
+9   FCA                 FINISHED ALUM CARPORT
+10  FCB                       FINISHED CABANA
+11  FCP                      FINISHED CARPORT
+12  FDA             FINISHED DET ALUM CARPORT
+13  FDC                  FINISHED DET CARPORT
+14  FDG                   FINISHED DET GARAGE
+15  FDS                FINISHED DET SCRN ENCL
+16  FDU                  FINISHED DET UTILITY
+17  FEA              FINISHED ENCL ALUM PORCH
+18  FEP                   FINISHED ENCL PORCH
+19  FGR                       FINISHED GARAGE
+20  FHS                   FINISHED HALF STORY
+21  FOA              FINISHED OPEN ALUM PORCH
+22  FOP                   FINISHED OPEN PORCH
+23  FSA          FINISHED SCREENED ALUM PORCH
+24  FSP               FINISHED SCREENED PORCH
+25  FST                      FINISHED STORAGE
+26  FUS                  FINISHED UPPER STORY
+27  GOF                           GOOD OFFICE
+28  PTO                                 PATIO
+29  RGR             FINISHED OPEN PORCH (FOP)
+30  ROP                     LIVING AREA (BAS)
+31  RPG                 FINISHED GARAGE (FGR)
+32  RPT                       APARTMENT (APT)
+33  RSA  FINISHED SCREEN ALUMINUM PORCH (FSA)
+34  RUP           UNFINISHED OPEN PORCH (UOP)
+35  RUS            FINISHED UPPER STORY (FUS)
+36  SDA                  SERVICE DISPLAY AREA
+37  SFB                    SEMI-FINISHED BASE
+38  SPA               SERVICE/PRODUCTION AREA
+39  STP                                 STOOP
+40  UBM                   UNFINISHED BASEMENT
+41  UCA               UNFINISHED ALUM CARPORT
+42  UCB                     UNFINISHED CABANA
+43  UCP                    UNFINISHED CARPORT
+44  UDA           UNFINISHED DET ALUM CARPORT
+45  UDC                UNFINISHED DET CARPORT
+46  UDG                 UNFINISHED DET GARAGE
+47  UDS                UNFINISHED DET STORAGE
+48  UDU                UNFINISHED DET UTILITY
+49  UEA            UNFINISHED ENCL ALUM PORCH
+50  UEP                 UNFINISHED ENCL PORCH
+51  UGR                     UNFINISHED GARAGE
+52  ULP           UNFINISHED LOADING PLATFORM
+53  UOA            UNFINISHED OPEN ALUM PORCH
+54  UOP                 UNFINISHED OPEN PORCH
+55  USA        UNFINISHED SCREENED ALUM PORCH
+56  USP             UNFINISHED SCREENED PORCH
+57  UST                    UNFINISHED STORAGE
+58  UUS                UNFINISHED UPPER STORY
+--- sheet Extra Feature Descriptions: 430 rows; columns ['CODE', 'DESCRIPTION']
+         CODE                       DESCRIPTION
+0       C12BW          COMMERCIAL 12"BRICK WALL
+1       C4CBW              COMMERCIAL 4"CB WALL
+2      C4CBWS     COMMERCIAL 4"CB WALL W/STUCCO
+3        C8BW           COMMERCIAL 8"BRICK WALL
+4       C8CBW              COMMERCIAL 8"CB WALL
+5      C8CBWS    COMMERCIAL 8" CB WALL W/STUCCO
+6      CA/C-1        COMMERCIAL AIR CONDITIONER
+7      CA/C-2        COMMERCIAL AIR CONDITIONER
+8      CA/C-3        COMMERCIAL AIR CONDITIONER
+9      CA/C-4        COMMERCIAL AIR CONDITIONER
+10   CALRMSYS           COMMERCIAL ALARM SYSTEM
+11       CAOF         COMMERCIAL AVERAGE OFFICE
+12       CAPT              COMMERCIAL APARTMENT
+13    CATRIUM                 COMMERCIAL ATRIUM
+14      CBARN                   COMMERCIAL BARN
+15       CBAS                   COMMERCIAL BASE
+16      CBASE                   COMMERCIAL BASE
+17    CBATHHS              COMMERCIAL BATHHOUSE
+18   CBEACHHS            COMMERCIAL BEACH HOUSE
+19   CBLEACHR              COMMERCIAL BLEACHERS
+20   CBLOCKPT            COMMERCIAL BLOCK PLANT
+21   CBOATHSE              COMMERCIAL BOATHOUSE
+22   CBOATRMP              COMMERCIAL BOAT RAMP
+23   CBOATSLP              COMMERCIAL BOAT SLIP
+24   CBRDWALK              COMMERCIAL BOARDWALK
+25    CBRIDGE                 COMMERCIAL BRIDGE
+26    CBRKPTO            COMMERCIAL BRICK PATIO
+27    CBRKSAN        COMMERCIAL BRICK SAND BASE
+28   CBSKTCRT       COMMERCIAL BASKETBALL COURT
+29     CCAC-1            COMMERCIAL CENTRAL A/C
+30     CCAC-2            COMMERCIAL CENTRAL A/C
+31     CCAC-3            COMMERCIAL CENTRAL A/C
+32     CCAC-4            COMMERCIAL CENTRAL A/C
+33    CCANOPY                 COMMERCIAL CANOPY
+34   CCARPORT                COMMERCIAL CARPORT
+35    CCATHCE      COMMERCIAL CATHEDRAL CEILING
+36   CCLASSRM             COMMERCIAL CLASS ROOM
+37   CCLDSTOR           COMMERCIAL COLD STORAGE
+38   CCLFCMIN     COMMERCIAL CHAIN LINK MINIMUM
+39   CCLFENCE       COMMERCIAL CHAIN LINK FENCE
+40       CCLP   COMMERCIAL CONCRETE LOADING PLA
+41    CCLUBHS              COMMERCIAL CLUBHOUSE
+42   CCOMBLDG        COMMERCIAL COMMERCIAL BLDG
+43    CCONCST       COMMERCIAL CONCESSION STAND
+44     CCONDO                  COMMERCIAL CONDO
+45    CCONPTO         COMMERCIAL CONCRETE PATIO
+46    CCOOLDK              COMMERCIAL COOL DECK
+47    CCOOLER                 COMMERCIAL COOLER
+48   CDAVITSE        COMMERCIAL DAVITS ELECTRIC
+49   CDAVITSM          COMMERCIAL DAVITS MANUAL
+50   CDCFENCE       COMMERCIAL DECORATIVE FENCE
+51     CDOCKF          COMMERCIAL DOCK FLOATING
+52    CDOCKLD           COMMERCIAL DOCK LOADING
+53     CDOCKS        COMMERCIAL DOCK STATIONARY
+54      CDOOR                   COMMERCIAL DOOR
+55   CDRINWIN        COMMERCIAL DRIVE-UP-WINDOW
+56   CDRIVEIN       COMMERCIAL DRIVE-IN-THEATER
+57    CDUGOUT       COMMERCIAL BASEBALL DUG OUT
+58       CDWA       COMMERCIAL DRIVEWAY ASPHALT
+59       CDWC      COMMERCIAL CONCRETE DRIVEWAY
+60     CDWSWA   COMMERCIAL DRVWAY/SIDEWALK ASPH
+61     CDWSWC   COMMERCIAL DRVWAY/SIDEWALK CONC
+62   CELEVATR    COMMERCIAL ELEVATOR(USE SCHED)
+63    CELPRKG       COMMERCIAL ELEVATED PARKING
+64    CFARROW            COMMERCIAL SWINE HOUSE
+65       CFAT         COMMERCIAL FINISHED ATTIC
+66       CFBM      COMMERCIAL FINISHED BASEMENT
+67       CFCA   COMMERCIAL FINISHED CARPORT ALU
+68       CFCB        COMMERCIAL FINISHED CABANA
+69       CFCP       COMMERCIAL FINISHED CARPORT
+70       CFDA      COMMERCIAL FINISHED DET ALUM
+71       CFDC   COMMERCIAL FINISHED DET CARPORT
+72       CFDG    COMMERCIAL FINISHED DET GARAGE
+73       CFDS    COMMERCIAL FINISHED DET SCREEN
+74       CFDU      COMMERCIAL FIN DETACHED UTIL
+75       CFEA    COMMERCIAL FIN ENCL PORCH ALUM
+76       CFEP         COMMERCIAL FIN ENCL PORCH
+77       CFGR        COMMERCIAL FINISHED GARAGE
+78    CFIREPL              COMMERCIAL FIREPLACE
+79    CFLGPTO        COMMERCIAL FLAGSTONE PATIO
+80       CFOA    COMMERCIAL FIN OPEN PORCH ALUM
+81       CFOP    COMMERCIAL FINISHED OPEN PORCH
+82   CFOUNTIN               COMMERCIAL FOUNTAIN
+83   CFRUITST             COMMERCIAL FRUITSTAND
+84       CFSA    COMMERCIAL FIN SCRN PORCH ALUM
+85       CFSP         COMMERCIAL FIN SCRN PORCH
+86       CFST       COMMERCIAL FINISHED STORAGE
+87       CFUS        COMMERCIAL FIN UPPER STORY
+88    CGARAGE                 COMMERCIAL GARAGE
+89    CGARDEN                 COMMERCIAL GARDEN
+90      CGATE                   COMMERCIAL GATE
+91    CGATEWI      COMMERCIAL GATE WROUGHT IRON
+92    CGAZEBO                 COMMERCIAL GAZEBO
+93       CGOF            COMMERCIAL GOOD OFFICE
+94   CGREENHS             COMMERCIAL GREENHOUSE
+95     CGRILL                  COMMERCIAL GRILL
+96   CGUARDHS             COMMERCIAL GUARDHOUSE
+97    CHANGAR                 COMMERCIAL HANGAR
+98   CHDBCTFP    COMMERCIAL HNDBALL $ FIELD PER
+99   CHNDBLCT         COMMERCIAL HANDBALL COURT
+100  CJACUZZI                COMMERCIAL JACUZZI
+101  CJOY-LAN        COMMERCIAL JOY-LAN DRIVEIN
+102   CKENNEL                 COMMERCIAL KENNEL
+103    CLANAI                  COMMERCIAL LANAI
+104  CLIGHTDA   COMMERCIAL LIGHT DOUBLE ALUMIN.
+105  CLIGHTDC      COMMERCIAL LIGHT DOUBLE CONC
+106  CLIGHTDM     COMMERCIAL LIGHT DOUBLE METAL
+107  CLIGHTFA     COMMERCIAL LIGHT FOUR ALUMIN.
+108  CLIGHTFC        COMMERCIAL LIGHT FOUR CONC
+109  CLIGHTFM       COMMERCIAL LIGHT FOUR METAL
+110  CLIGHTSA   COMMERCIAL LIGHT SINGLE ALUMIN.
+111  CLIGHTSC      COMMERCIAL LIGHT SINGLE CONC
+112  CLIGHTSM     COMMERCIAL LIGHT SINGLE METAL
+113  CLIGHTTA   COMMERCIAL LIGHT TRIPLE ALUMIN.
+114  CLIGHTTC      COMMERCIAL LIGHT TRIPLE CONC
+115  CLIGHTTM     COMMERCIAL LIGHT TRIPLE METAL
+116     CMALL                   COMMERCIAL MALL
+117   CMALLXF     COMMERCIAL MALL EXTRA FEATURE
+118   CMAUSUT         COMMERCIAL MAUSELEUM UNIT
+119    CMHFUS     COMMERCIAL MH FIN UPPER STORY
+120   CMHROOF                COMMERCIAL MH ROOF
+121  CMINGOLF     COMMERCIAL MINI GOLF COURSE 3
+122   CMTBLDG         COMMERCIAL METAL BUILDING
+123   CNICHES          COMMERCIAL BURIAL NICHES
+124  CNITEDEP          COMMERCIAL NIGHT DEPOSIT
+125    COLDHS              COMMERCIAL OLD HOUSE
+126    COLDMH        COMMERCIAL OLD MOBILE HOME
+127  CPABOOTH               COMMERCIAL PA BOOTH
+128  CPARKGAR     COMMERCIAL PARKING GARAGE LOW
+129   CPARKSP          COMMERCIAL PARKING SPACE
+130    CPATIO                  COMMERCIAL PATIO
+131   CPAVASP         COMMERCIAL PAVING ASPHALT
+132   CPAVCON        COMMERCIAL PAVING CONCRETE
+133  CPAVILLN               COMMERCIAL PAVILION
+134  CPLATFRM               COMMERCIAL PLATFORM
+135  CPNEUTUB        COMMERCIAL PNEUMATIC TUBES
+136   CPOOL-6      COMMERCIAL POOL 6 FOOT DEPTH
+137  CPOOL-6V    COMMERCIAL POOL 6 FT DEP VINYL
+138   CPOOL-9        COMMERCIAL POOL 9 FT DEPTH
+139  CPOOL-9V        COMMERCIAL POOL 9 FT VINYL
+140  CPOOLCON          COMMERCIAL CONCRETE POOL
+141  CPOOLGUN            COMMERCIAL POOL GUNITE
+142  CPOULTRY           COMMERCIAL POULTRY FARM
+143   CPRISON                 COMMERCIAL PRISON
+144  CPUMPHSE              COMMERCIAL PUMPHOUSE
+145  CPVCFENC            COMMERCIAL PVC FENCING
+146   CPVCFLF       COMMERCIAL PVC FENCING (LF)
+147   CPVCFSF       COMMERCIAL PVC FENCING (SF)
+148     CRAMP                   COMMERCIAL RAMP
+149  CRECBLDG        COMMERCIAL RECREATION BLDG
+150   CRESTRM               COMMERCIAL RESTROOM
+151  CRETWALL         COMMERCIAL RETAINING WALL
+152     CRFOV              COMMERCIAL ROOF OVER
+153    CRRCAR           COMMERCIAL RAILROAD CAR
+154   CRUNWAY                 COMMERCIAL RUNWAY
+155    CSAUNA                  COMMERCIAL SAUNA
+156  CSCRN-AF    COMMERCIAL SCREENED ENCL A FRM
+157  CSCRN-FF   COMMERCIAL SCREEN ENCL FLAT FRM
+158      CSDA   COMMERCIAL SERVICE DISPLAY AREA
+159  CSEAWALB                COMMERCIAL SEAWALL
+160  CSEAWALC                COMMERCIAL SEAWALL
+161  CSEAWALM                COMMERCIAL SEAWALL
+162  CSERVSHP           COMMERCIAL SERVICE SHOP
+163  CSHADEHS            COMMERCIAL SHADE HOUSE
+164     CSHED                   COMMERCIAL SHED
+165  CSHELTER                COMMERCIAL SHELTER
+166     CSHOP                   COMMERCIAL SHOP
+167  CSHUFFLE           COMMERCIAL SHUFFLEBOARD
+168  CSKATRNK           COMMERCIAL SKATING RINK
+169  CSNAKBAR              COMMERCIAL SNACK BAR
+170      CSPA   COMMERCIAL JACUZZI SPA/POOL TUB
+171  CSPRNKFP    COMMERCIAL SPRINK FIRE PROTECT
+172   CSTABLE                 COMMERCIAL STABLE
+173  CSTADIUM                COMMERCIAL STADIUM
+174   CSTAIRS                 COMMERCIAL STAIRS
+175   CSTALLS           COMMERCIAL HORSE STALLS
+176  CSTEAMBA              COMMERCIAL STEAMBATH
+177  CSUNDECK                COMMERCIAL SUNDECK
+178  CSUNROOF               COMMERCIAL SUN ROOF
+179      CSWA          COMMERCIAL SIDEWALK ASPH
+180      CSWB         COMMERCIAL SIDEWALK BRICK
+181      CSWC      COMMERCIAL SIDEWALK CONCRETE
+182     CSWWD        COMMERCIAL WOODEN SIDEWALK
+183  CTENNSCT           COMMERCIAL TENNIS COURT
+184   CTILPTO             COMMERCIAL TILE PATIO
+185  CTRUSSPT            COMMERCIAL TRUSS PLANT
+186      CUBM    COMMERCIAL UNFINISHED BASEMENT
+187      CUCA     COMMERCIAL UNFIN CARPORT ALUM
+188      CUCB           COMMERCIAL UNFIN CABANA
+189      CUCP          COMMERCIAL UNFIN CARPORT
+190      CUDA   COMMERCIAL UNFIN DET CARPT ALUM
+191      CUDC   COMMERCIAL UNFIN DETACH CARPORT
+192      CUDG    COMMERCIAL UNFIN DETACH GARAGE
+193      CUDS   COMMERCIAL UNFIN DETACH SCR PCH
+194      CUDU           COMMERCIAL UTILITY SHED
+195    CUDU-M   COMMERCIAL UNFIN DETACH UTIL MT
+196      CUEA    COMMERCIAL UNFIN ENCL PCH ALUM
+197      CUEP         COMMERCIAL UNFIN ENCL PCH
+198      CUGR      COMMERCIAL UNFINISHED GARAGE
+199      CULP      COMMERCIAL UNFIN LOADING PLT
+200      CUOA    COMMERCIAL UNFIN OPEN PCH ALUM
+201      CUOP       COMMERCIAL UNFIN OPEN PORCH
+202      CUSA        COMMERCIAL UNFIN SCRN ALUM
+203      CUSP     COMMERCIAL UNFIN SCREEN PORCH
+204      CUST          COMMERCIAL UNFIN STORAGE
+205  CUTILITY           COMMERCIAL UTILITY BLDG
+206      CUUS      COMMERCIAL UNFIN UPPER STORY
+207    CVAULT                  COMMERCIAL VAULT
+208  CVAULTDR             COMMERCIAL VAULT DOOR
+209  CWALKWIN         COMMERCIAL WALK UP WINDOW
+210  CWATERPT            COMMERCIAL WATER PLANT
+211   CWDDECK            COMMERCIAL WOODEN DECK
+212  CWDFENCE           COMMERCIAL WOODEN FENCE
+213  CWDSTOVE             COMMERCIAL WOOD STOVE
+214  CWIFENCE     COMMERCIAL WROUGHT IRON FENCE
+215     R12BW         RESIDENTIAL 12"BRICK WALL
+216     R4CBW             RESIDENTIAL 4"CB WALL
+217    R4CBWS    RESIDENTIAL 4"CB WALL W/STUCCO
+218      R8BW          RESIDENTIAL 8"BRICK WALL
+219     R8CBW             RESIDENTIAL 8"CB WALL
+220    R8CBWS   RESIDENTIAL 8" CB WALL W/STUCCO
+221    RA/C-1       RESIDENTIAL AIR CONDITIONER
+222    RA/C-2       RESIDENTIAL AIR CONDITIONER
+223    RA/C-3       RESIDENTIAL AIR CONDITIONER
+224    RA/C-4       RESIDENTIAL AIR CONDITIONER
+225  RALRMSYS          RESIDENTIAL ALARM SYSTEM
+226      RAOF        RESIDENTIAL AVERAGE OFFICE
+227      RAPT             RESIDENTIAL APARTMENT
+228   RATRIUM                RESIDENTIAL ATRIUM
+229     RBARN                  RESIDENTIAL BARN
+230      RBAS                  RESIDENTIAL BASE
+231     RBASE                  RESIDENTIAL BASE
+232   RBATHHS             RESIDENTIAL BATHHOUSE
+233  RBEACHHS           RESIDENTIAL BEACH HOUSE
+234  RBLEACHR             RESIDENTIAL BLEACHERS
+235  RBLOCKPT           RESIDENTIAL BLOCK PLANT
+236  RBOATHSE             RESIDENTIAL BOATHOUSE
+237  RBOATRMP             RESIDENTIAL BOAT RAMP
+238  RBOATSLP             RESIDENTIAL BOAT SLIP
+239  RBRDWALK             RESIDENTIAL BOARDWALK
+240   RBRIDGE                RESIDENTIAL BRIDGE
+241   RBRKPTO           RESIDENTIAL BRICK PATIO
+242   RBRKSAN       RESIDENTIAL BRICK SAND BASE
+243  RBSKTCRT      RESIDENTIAL BASKETBALL COURT
+244    RCAC-1           RESIDENTIAL CENTRAL A/C
+245    RCAC-2           RESIDENTIAL CENTRAL A/C
+246    RCAC-3           RESIDENTIAL CENTRAL A/C
+247    RCAC-4           RESIDENTIAL CENTRAL A/C
+248   RCANOPY                RESIDENTIAL CANOPY
+249  RCARPORT               RESIDENTIAL CARPORT
+250   RCATHCE     RESIDENTIAL CATHEDRAL CEILING
+251  RCLASSRM            RESIDENTIAL CLASS ROOM
+252  RCLDSTOR          RESIDENTIAL COLD STORAGE
+253  RCLFCMIN    RESIDENTIAL CHAIN LINK MINIMUM
+254  RCLFENCE      RESIDENTIAL CHAIN LINK FENCE
+255      RCLP  RESIDENTIAL CONCRETE LOADING PLA
+256   RCLUBHS             RESIDENTIAL CLUBHOUSE
+257  RCOMBLDG       RESIDENTIAL COMMERCIAL BLDG
+258   RCONCST      RESIDENTIAL CONCESSION STAND
+259    RCONDO                 RESIDENTIAL CONDO
+260   RCONPTO        RESIDENTIAL CONCRETE PATIO
+261   RCOOLDK             RESIDENTIAL COOL DECK
+262   RCOOLER                RESIDENTIAL COOLER
+263  RDAVITSE       RESIDENTIAL DAVITS ELECTRIC
+264  RDAVITSM         RESIDENTIAL DAVITS MANUAL
+265  RDCFENCE      RESIDENTIAL DECORATIVE FENCE
+266    RDOCKF         RESIDENTIAL DOCK FLOATING
+267   RDOCKLD          RESIDENTIAL DOCK LOADING
+268    RDOCKS       RESIDENTIAL DOCK STATIONARY
+269     RDOOR                  RESIDENTIAL DOOR
+270  RDRINWIN       RESIDENTIAL DRIVE-UP-WINDOW
+271  RDRIVEIN      RESIDENTIAL DRIVE-IN-THEATER
+272   RDUGOUT      RESIDENTIAL BASEBALL DUG OUT
+273      RDWA      RESIDENTIAL DRIVEWAY ASPHALT
+274      RDWC     RESIDENTIAL CONCRETE DRIVEWAY
+275    RDWSWA  RESIDENTIAL DRVWAY/SIDEWALK ASPH
+276    RDWSWC  RESIDENTIAL DRVWAY/SIDEWALK CONC
+277  RELEVATR   RESIDENTIAL ELEVATOR(USE SCHED)
+278   RELPRKG      RESIDENTIAL ELEVATED PARKING
+279   RFARROW           RESIDENTIAL SWINE HOUSE
+280      RFAT        RESIDENTIAL FINISHED ATTIC
+281      RFBM     RESIDENTIAL FINISHED BASEMENT
+282      RFCA  RESIDENTIAL FINISHED CARPORT ALU
+283      RFCB       RESIDENTIAL FINISHED CABANA
+284      RFCP      RESIDENTIAL FINISHED CARPORT
+285      RFDA     RESIDENTIAL FINISHED DET ALUM
+286      RFDC  RESIDENTIAL FINISHED DET CARPORT
+287      RFDG   RESIDENTIAL FINISHED DET GARAGE
+288      RFDS   RESIDENTIAL FINISHED DET SCREEN
+289      RFDU     RESIDENTIAL FIN DETACHED UTIL
+290      RFEA   RESIDENTIAL FIN ENCL PORCH ALUM
+291      RFEP        RESIDENTIAL FIN ENCL PORCH
+292      RFGR       RESIDENTIAL FINISHED GARAGE
+293   RFIREPL             RESIDENTIAL FIREPLACE
+294   RFLGPTO       RESIDENTIAL FLAGSTONE PATIO
+295      RFOA   RESIDENTIAL FIN OPEN PORCH ALUM
+296      RFOP   RESIDENTIAL FINISHED OPEN PORCH
+297  RFOUNTIN              RESIDENTIAL FOUNTAIN
+298  RFRUITST            RESIDENTIAL FRUITSTAND
+299      RFSA   RESIDENTIAL FIN SCRN PORCH ALUM
+300      RFSP        RESIDENTIAL FIN SCRN PORCH
+301      RFST      RESIDENTIAL FINISHED STORAGE
+302      RFUS       RESIDENTIAL FIN UPPER STORY
+303   RGARAGE                RESIDENTIAL GARAGE
+304   RGARDEN                RESIDENTIAL GARDEN
+305     RGATE                  RESIDENTIAL GATE
+306   RGATEWI     RESIDENTIAL GATE WROUGHT IRON
+307   RGAZEBO                RESIDENTIAL GAZEBO
+308      RGOF           RESIDENTIAL GOOD OFFICE
+309  RGREENHS            RESIDENTIAL GREENHOUSE
+310    RGRILL                 RESIDENTIAL GRILL
+311  RGUARDHS            RESIDENTIAL GUARDHOUSE
+312   RHANGAR                RESIDENTIAL HANGAR
+313  RHDBCTFP   RESIDENTIAL HNDBALL $ FIELD PER
+314  RHNDBLCT        RESIDENTIAL HANDBALL COURT
+315  RJACUZZI               RESIDENTIAL JACUZZI
+316  RJOY-LAN       RESIDENTIAL JOY-LAN DRIVEIN
+317   RKENNEL                RESIDENTIAL KENNEL
+318    RLANAI                 RESIDENTIAL LANAI
+319  RLIGHTDA  RESIDENTIAL LIGHT DOUBLE ALUMIN.
+320  RLIGHTDC     RESIDENTIAL LIGHT DOUBLE CONC
+321  RLIGHTDM    RESIDENTIAL LIGHT DOUBLE METAL
+322  RLIGHTFA    RESIDENTIAL LIGHT FOUR ALUMIN.
+323  RLIGHTFC       RESIDENTIAL LIGHT FOUR CONC
+324  RLIGHTFM      RESIDENTIAL LIGHT FOUR METAL
+325  RLIGHTSA  RESIDENTIAL LIGHT SINGLE ALUMIN.
+326  RLIGHTSC     RESIDENTIAL LIGHT SINGLE CONC
+327  RLIGHTSM    RESIDENTIAL LIGHT SINGLE METAL
+328  RLIGHTTA  RESIDENTIAL LIGHT TRIPLE ALUMIN.
+329  RLIGHTTC     RESIDENTIAL LIGHT TRIPLE CONC
+330  RLIGHTTM    RESIDENTIAL LIGHT TRIPLE METAL
+331     RMALL                  RESIDENTIAL MALL
+332   RMALLXF    RESIDENTIAL MALL EXTRA FEATURE
+333   RMAUSUT        RESIDENTIAL MAUSELEUM UNIT
+334    RMHFUS    RESIDENTIAL MH FIN UPPER STORY
+335   RMHROOF               RESIDENTIAL MH ROOF
+336  RMINGOLF    RESIDENTIAL MINI GOLF COURSE 3
+337   RMTBLDG        RESIDENTIAL METAL BUILDING
+338   RNICHES         RESIDENTIAL BURIAL NICHES
+339  RNITEDEP         RESIDENTIAL NIGHT DEPOSIT
+340    ROLDHS             RESIDENTIAL OLD HOUSE
+341    ROLDMH       RESIDENTIAL OLD MOBILE HOME
+342  RPABOOTH              RESIDENTIAL PA BOOTH
+343  RPARKGAR    RESIDENTIAL PARKING GARAGE LOW
+344   RPARKSP         RESIDENTIAL PARKING SPACE
+345    RPATIO                 RESIDENTIAL PATIO
+346   RPAVASP        RESIDENTIAL PAVING ASPHALT
+347   RPAVCON       RESIDENTIAL PAVING CONCRETE
+348  RPAVILLN              RESIDENTIAL PAVILION
+349  RPLATFRM              RESIDENTIAL PLATFORM
+350  RPNEUTUB       RESIDENTIAL PNEUMATIC TUBES
+351   RPOOL-6     RESIDENTIAL POOL 6 FOOT DEPTH
+352  RPOOL-6V   RESIDENTIAL POOL 6 FT DEP VINYL
+353   RPOOL-9       RESIDENTIAL POOL 9 FT DEPTH
+354  RPOOL-9V       RESIDENTIAL POOL 9 FT VINYL
+355  RPOOLCON         RESIDENTIAL CONCRETE POOL
+356  RPOOLGUN           RESIDENTIAL POOL GUNITE
+357  RPOULTRY          RESIDENTIAL POULTRY FARM
+358   RPRISON                RESIDENTIAL PRISON
+359  RPUMPHSE             RESIDENTIAL PUMPHOUSE
+360  RPVCFENC           RESIDENTIAL PVC FENCING
+361   RPVCFLF      RESIDENTIAL PVC FENCING (LF)
+362   RPVCFSF      RESIDENTIAL PVC FENCING (SF)
+363     RRAMP                  RESIDENTIAL RAMP
+364  RRECBLDG       RESIDENTIAL RECREATION BLDG
+365   RRESTRM              RESIDENTIAL RESTROOM
+366  RRETWALL        RESIDENTIAL RETAINING WALL
+367     RRFOV             RESIDENTIAL ROOF OVER
+368    RRRCAR          RESIDENTIAL RAILROAD CAR
+369   RRUNWAY                RESIDENTIAL RUNWAY
+370    RSAUNA                 RESIDENTIAL SAUNA
+371  RSCRN-AF   RESIDENTIAL SCREENED ENCL A FRM
+372  RSCRN-FF  RESIDENTIAL SCREEN ENCL FLAT FRM
+373      RSDA  RESIDENTIAL SERVICE DISPLAY AREA
+374  RSEAWALB               RESIDENTIAL SEAWALL
+375  RSEAWALC               RESIDENTIAL SEAWALL
+376  RSEAWALM               RESIDENTIAL SEAWALL
+377  RSERVSHP          RESIDENTIAL SERVICE SHOP
+378  RSHADEHS           RESIDENTIAL SHADE HOUSE
+379     RSHED                  RESIDENTIAL SHED
+380  RSHELTER               RESIDENTIAL SHELTER
+381     RSHOP                  RESIDENTIAL SHOP
+382  RSHUFFLE          RESIDENTIAL SHUFFLEBOARD
+383  RSKATRNK          RESIDENTIAL SKATING RINK
+384  RSNAKBAR             RESIDENTIAL SNACK BAR
+385      RSPA  RESIDENTIAL JACUZZI SPA/POOL TUB
+386  RSPRNKFP   RESIDENTIAL SPRINK FIRE PROTECT
+387   RSTABLE                RESIDENTIAL STABLE
+388  RSTADIUM               RESIDENTIAL STADIUM
+389   RSTAIRS                RESIDENTIAL STAIRS
+390   RSTALLS          RESIDENTIAL HORSE STALLS
+391  RSTEAMBA             RESIDENTIAL STEAMBATH
+392  RSUNDECK               RESIDENTIAL SUNDECK
+393  RSUNROOF              RESIDENTIAL SUN ROOF
+394      RSWA         RESIDENTIAL SIDEWALK ASPH
+395      RSWB        RESIDENTIAL SIDEWALK BRICK
+396      RSWC     RESIDENTIAL SIDEWALK CONCRETE
+397     RSWWD       RESIDENTIAL WOODEN SIDEWALK
+398  RTENNSCT          RESIDENTIAL TENNIS COURT
+399   RTILPTO            RESIDENTIAL TILE PATIO
+--- sheet Sales Status: 14 rows; columns ['CODE', 'DESCRIPTION']
+   CODE                               DESCRIPTION
+0    AP                       Additional Property
+1    CD       Re-recorded deeds, corrective deeds
+2    CP        Order of Summary of Administration
+3    CT                      Certificate of Title
+4    DC                       Deed of convenience
+5    GD  Love & Affection, Gift Deed, for Con $10
+6    LF     Deeds that are in lieu of foreclosure
+7    MS                          Multiparcel Sale
+8    OH            Order Determining of Homestead
+9    PI                          Partial Interest
+10   RC                           Reverter Clause
+11   SD  Satisfaction Previous Agreement for Deed
+12   SM           Subject to Existing Mortgage(s)
+13   SS                          Subsequent Split
+--- sheet Neighborhood Code: 1545 rows; columns ['CODE', 'DESCRIPTION']
+     CODE                               DESCRIPTION
+0    0CHT                                      0CHT
+1    0ELC                                       ELC
+2    0FLR                                       FLR
+3    0HUD                                       HUD
+4    0IOL                                       IOL
+5    0LAC                                       LAC
+6    0LOL                                       LOL
+7    0RCK                                      0RCK
+8    0SFK                                       SFK
+9    0SLC                                       SLC
+10   0SWP                                       SWP
+11   0WCP                                       WCP
+12   0WLC                                      0WLC
+13   0WSP                                       WSP
+14   10DS                                      10DS
+15   1BAY                                       BAY
+16   1BLT                                       BLT
+17   1BOW                                       BOW
+18   1BSC                                       BSC
+19   1CCP                                       CCP
+20   1CFK                                       CFK
+21   1CLC                                       CLC
+22   1CLR                                       CLR
+23   1DCC                                       DCC
+24   1DOB                                       DOB
+25   1DRK                                      1DRK
+26   1EDA                                       EDA
+27   1EDC                                       EDC
+28   1ELC                                       ELC
+29   1EOD                                       EOD
+30   1FDA                                       FDA
+31   1FLR                                       FLR
+32   1FOC                                       FOC
+33   1GCA                                       GCA
+34   1GSH                                       GSH
+35   1HCR                                       HCR
+36   1HLF                                       HLF
+37   1HUD                                       HUD
+38   1IOL                                       IOL
+39   1ISL                                       ISL
+40   1LAC                                       LAC
+41   1LLR                                       LLR
+42   1LOL                                       LOL
+43   1MLA                                       MLA
+44   1MLK                                       MLK
+45   1NCP                                       NCP
+46   1NDC                                       NDC
+47   1NEC                                       NEC
+48   1NEZ                                       NEZ
+49   1NFK                                       NFK
+50   1NLL                                       NLL
+51   1NOD                                       NOD
+52   1NSA                                       NSA
+53   1NWD                                       NWD
+54   1NWZ                                       NWZ
+55   1NZH                                       NZH
+56   1OAK                                       OAK
+57   1ODS                                       ODS
+58   1PAL                                       PAL
+59   1PAS                                       PAS
+60   1PST                                       PST
+61   1QLH                                       QLH
+62   1RIV                                       RIV
+63   1SAF                                       SAF
+64   1SAN                                       SAN
+65   1SBV                                       SBV
+66   1SEC                                       SEC
+67   1SED                                       SED
+68   1SFK                                       SFK
+69   1SHA                                       SHA
+70   1SLC                                       SLC
+71   1STJ                                       STJ
+72   1SWP                                       SWP
+73   1TRL                                       TRL
+74   1WCH                                       WCH
+75   1WCP                                       WCP
+76   1WDC                                       WDC
+77   1WLC                                       WLC
+78   1WRB                                       WRB
+79   1ZHC                                       ZHC
+80   1ZHE                                       ZHE
+81   1ZHN                                       ZHN
+82   1ZHP                                       ZHP
+83   1ZHR                                       ZHR
+84   1ZHS                                       ZHS
+85   2BAY                                       BAY
+86   2BCS                                       BCS
+87   2BLT                                       BLT
+88   2BOW                                       BOW
+89   2BSC                                       BSC
+90   2CCP                                       CCP
+91   2CFK                                       CCR
+92   2CLC                                       CLC
+93   2CLR                                       CFK
+94   2DCC                                       CLR
+95   2DOB                                       DCC
+96   2EDA                                       EDA
+97   2EDC                                       EDC
+98   2ELC                                       ELC
+99   2EOD                                       EOD
+100  2F0C                                      2F0C
+101  2FDA                                       FDA
+102  2FLR                                       FLR
+103  2FOC                                       FOC
+104  2GCA                                       GCA
+105  2GSH                                       GSH
+106  2HCR                                       HCR
+107  2HLF                                       HLF
+108  2HUD                                       HUD
+109  2LAC                                       LAC
+110  2LLR                                       LLR
+111  2LOL                                       LOL
+112  2MLA                                       MLA
+113  2MLK                                       MLK
+114  2N0D                                      2N0D
+115  2NCP                                       NCP
+116  2NDC                                       NDC
+117  2NEC                                       NEC
+118  2NEZ                                       NEZ
+119  2NFK                                       NFK
+120  2NLL                                       NLL
+121  2NOD                                       NOD
+122  2NSA                                       NSA
+123  2NWD                                       NWD
+124  2NWZ                                       NWZ
+125  2NZH                                       NZH
+126  2OAK                                       OAK
+127  2ODS                                       ODS
+128  2PAL                                       PAL
+129  2PAS                                       PAS
+130  2PST                                       PST
+131  2QLH                                       QLH
+132  2RIV                                       RIV
+133  2SAF                                       SAF
+134  2SAN                                       SAN
+135  2SBV                                       SBV
+136  2SEC                                       SEC
+137  2SED                                       SED
+138  2SFK                                       SFK
+139  2SHA                                       SHA
+140  2SLC                                       SLC
+141  2STJ                                       STJ
+142  2SWP                                       SWP
+143  2TRL                                       TRL
+144  2WCH                                       WCH
+145  2WCP                                       WCP
+146  2WDC                                       WDC
+147  2WLC                                       WLC
+148  2WRB                                       WRB
+149  2ZHC                                       ZHC
+150  2ZHE                                       ZHE
+151  2ZHN                                       ZHN
+152  2ZHR                                       ZHR
+153  2ZHS                                       ZHS
+154  3101                                      3101
+155  35WP                                      35WP
+156  3BAY                                       BAY
+157  3BLT                                       BLT
+158  3BOW                                       BOW
+159  3BSC                                       BSC
+160  3CCP                                       CCP
+161  3CFK                                       CFK
+162  3CLR                                       CLR
+163  3DCC                                       DCC
+164  3DOB                                       DOB
+165  3EDA                                       EDA
+166  3EDC                                       EDC
+167  3ELC                                       ELC
+168  3F0C                                      3F0C
+169  3FDA                                       FDA
+170  3FLR                                       FLR
+171  3FOC                                       FOC
+172  3GSH                                       GSH
+173  3HCR                                       HCR
+174  3HUD                                       HUD
+175  3L0L                                      3L0L
+176  3LAC                                       LAC
+177  3LLR                                       LLR
+178  3LOL                                       LOL
+179  3MHS                                       MHS
+180  3MLA                                       MLA
+181  3MLK                                       MLK
+182  3N0D                                      3N0D
+183  3NCP                                       NCP
+184  3NDC                                       NDC
+185  3NEZ                                       NEZ
+186  3NFK                                       NFK
+187  3NLL                                       NLL
+188  3NOD                                       NOD
+189  3NSA                                       NSA
+190  3NWD                                       NWD
+191  3NWZ                                       NWZ
+192  3NZH                                       NZH
+193  3ODS                                       ODS
+194  3PAS                                       PAS
+195  3PST                                       PST
+196  3QLH                                       QLH
+197  3RIV                                       RIV
+198  3ROW                              RIGHT OF WAY
+199  3SAF                                       SAF
+200  3SAN                                       SAN
+201  3SEC                                       SEC
+202  3SED                                       SED
+203  3SFK                                       SFK
+204  3SHA                                       SHA
+205  3SLC                                       SLC
+206  3STJ                                       STJ
+207  3SUN                                       SUN
+208  3SWP                                       SWP
+209  3TRL                                       TRL
+210  3WCH                                       WCH
+211  3WCP                                       WCP
+212  3WDC                                       WDC
+213  3WLC                                       WLC
+214  3WRB                                       WRB
+215  3ZHC                                       ZHC
+216  3ZHE                                       ZHE
+217  3ZHN                                       ZHN
+218  3ZHP                                       ZHP
+219  3ZHR                                       ZHR
+220  3ZHS                                       ZHS
+221  4AME                AMERICAN CONDOMINIUM PARKS
+222  4BAY                     BAYWOOD MEADOWS CONDO
+223  4BCL                        BEACON LAKES CONDO
+224  4BDY                          BRANDYWINE CONDO
+225  4BEL                    BELMONT AT RYALS CHASE
+226  4BWW                 WEDGEWOOD CONDO OF BEACON
+227  4CAL                       CALIENTE APARTMENTS
+228  4CCC             CAMBRIDGE COMMONS CONDOMINIUM
+229  4CDV             CEDARWOOD VILLAGE CONDOMINIUM
+230  4CHW             CHELSEA MEADOWS A CONDOMINIUM
+231  4COK                              COUNTRY OAKS
+232  4CPT               REPLATED CEDAR POINTE CONDO
+233  4CPV                 CAPRI VILLAGE CONDOMINIUM
+234  4CTV               CHATEAU VILLAGE CONDOMINIUM
+235  4DOC                 DOCKSIDE AT GULF LANDINGS
+236  4DWZ                  DRIFTWOOD OF ZEPHYRHILLS
+237  4EGD                        EAGLES POINT CONDO
+238  4EGP                        EAGLES POINT CONDO
+239  4EMB                    EMBASSY PARK TOWNHOMES
+240  4ERV                  EAST RICHEY VILLAS CONDO
+241  4FPL                        FOREST LAKE VILLAS
+242  4FXD                 ZEPHYR ESTATES EAST CONDO
+243  4GBS                  GARDENS OF BEACON SQUARE
+244  4GCR                    GLEN CREST CONDOMINIUM
+245  4GFH                  GULF HARBORS CONDOMINIUM
+246  4GIS                GULF ISLAND BEACH & TENNIS
+247  4GLB                  GARDENS OF LEISURE BEACH
+248  4GLD             GLENDALE VILLAS A CONDOMINIUM
+249  4GLW                    GLENWOOD VILLAGE CONDO
+250  4GVV               GULFVIEW VILLAS CONDOMINIUM
+251  4HBV                       HARBOR VILLAS CONDO
+252  4HCV                       LAKES AT HERON COVE
+253  4HDV                  BAYONET POINT COMMERCIAL
+254  4HLH                     HOLIDAY HARBORS CONDO
+255  4HLK                       HOLIDAY LAKE VILLAS
+256  4HLO                        HOLIDAY OAKS CONDO
+257  4HLS                THE HILLSIDE A CONDOMINIUM
+258  4HOK                HARBOR OAKS, A CONDOMINIUM
+259  4HTC                  HEATHER COVE OF NEW PORT
+260  4IPE                    IMPERIAL EMBASSY CONDO
+261  4LKC              LAKE CONLEY MOBILE HOME PARK
+262  4LKK                     LAKE KIMBERLY VILLAGE
+263  4LKP                     THE CLUB VILLAS CONDO
+264  4LKS                   LAKESIDE CONDO OF RIDGE
+265  4LNK              LINKSIDE VILLAGE CONDOMINIUM
+266  4MGV                     MAGNOLIA VALLEY CONDO
+267  4MLP                     MILLPOND LAKES VILLAS
+268  4MPL              MILLPOND LAKES A CONDOMINIUM
+269  4MPT              MILLPOND TRACE A CONDOMINIUM
+270  4MRW                  MARINERS WAY AT NEW PORT
+271  4NAL                           NEW AMERICA USA
+272  4NPC                NEW PORT COLONY UNREC PLAT
+273  4NPR                           THE WILDS CONDO
+274  4OAK                    RIVER OAKS CONDO PHASE
+275  4OBR                ORANGE BLOSSOM RANCH CONDO
+276  4OOR                     ORCHARDS OF RADCLIFFE
+277  4PLF                     FOUNTAINS AT PARADISE
+278  4PPH             POINTE PLEASANT HARBOUR CONDO
+279  4PPR                    PARADISE PINES RV PARK
+280  4PPW                      PARADISE POINTE WEST
+281  4PRI                               WHISPER RUN
+282  4PRL               PARADISE LAKES RESORT CONDO
+283  4PSC                 PINE RIDGE AT SUGAR CREEK
+284  4QRD                THE VILLAGE AT QUAIL RIDGE
+285  4RGP               REGENCY PALMS A CONDOMINIUM
+286  4RRV                      ROYAL RICHEY VILLAGE
+287  4RSV            RIVERSIDE VILLAGE CONDOMINIUMS
+288  4RVC                        RIVER VILLAS CONDO
+289  4SAB                SADDLEBROOK GOLF & COUNTRY
+290  4SAD                   SADDLEBROOK CONDOMINIUM
+291  4SBK                    SUNNYBROOK CONDOMINIUM
+292  4SBT                SOUTH BOULEVARD TOWNHOUSES
+293  4SCC                          SEA CASTLE CONDO
+294  4SFV                    STAMFORD VILLAGE CONDO
+295  4SPH                        SPRING HAVEN CONDO
+296  4SPP                        SAND PEBBLE POINTE
+297  4SPT                          SPANISH   TRAILS
+298  4SQV               SUNRISE SQUARE VILLAS CONDO
+299  4SSG                          GOLF VIEW VILLAS
+300  4SSV                             SEVEN SPRINGS
+301  4SVG                     SEAVIEW PLACE AT GULF
+302  4TCV             TWO CAPRI VILLAGE CONDOMINIUM
+303  4TGW               TANGLEWOOD MOBILE VLG CONDO
+304  4THG                          TAHITIAN GARDENS
+305  4TIK             TIKI VILLAGE MOBILE HOME PARK
+306  4TLA                         TALIA CONDOMINIUM
+307  4TLE            TIMBER LAKE ESTATES CONDO PH I
+308  4TLV                  TWIN LAKES VILLAGE CONDO
+309  4TOF                TIMBER OAKS FAIRWAY VILLAS
+310  4TOG                       TOWNES ON THE GREEN
+311  4TPL              TERRACES AT PARADISE LAKES A
+312  4TRL                         TRI LEISURE CONDO
+313  4TSC                       TUSCANO AT SUNCOAST
+314  4TSQ                   TOWNE SQ VILLAS A CONDO
+315  4VCR                       VICEROY CONDOMINIUM
+316  4VET                    VILLA D ESTE TOWNHOMES
+317  4VKB             VICKSBURG VILLAGE CONDOMINIUM
+318  4VWD                       VILLAGE WOODS CONDO
+319  4WDC                       WINDWARD COVE CONDO
+320  4WDT                           WOODTRAIL CONDO
+321  4WSM                   WESTMINSTER CONDOMINIUM
+322  4WWV                    WEDGWOOD VILLAGE CONDO
+323  5MF1                                       MF1
+324  5MF2                                       MF2
+325  5MF3                                      5MF3
+326  5MFN                                      5MFN
+327  9BAL       BALLANTRAE PROFESSIONAL CONDOMINIUM
+328  9BLK                      BLAC  LAK ONAL OFFIC
+329  9BLR           LAKE PADGETT SQUARE CONDOMINIUM
+330  9BPM               BAYONET POINT MEDICAL PLAZA
+331  9BYP              THE BAYONET POINT COMM CONDO
+332  9CEC                 CRAFT MEDICAL PLAZA CONDO
+333  9CSC       COURTSIDE COMMONS COMMERCIAL CENTER
+334  9CYR         CYPRESS RIDGE PROFESSIONAL CENTER
+335  9DCI                                      9DCI
+336  9DFC           FOGGY RIDGE COMMONS CONDOMINIUM
+337  9DMD                      MEDI  AND ASSOCIATES
+338  9DPK                      FIFT  OFF ARK COMMER
+339  9DPP            PROFESSIONAL PLAZA CONDOMINIUM
+340  9DRR                      RANC  DEL LE ROAD PR
+341  9DWL                      WYNDLAKE CONDOMINIUM
+342  9DWP                            DAVE  WEST PRO
+343  9EAG                   EAGLES NEST CONDOMINIUM
+344  9FPC               FIVAY PROFESSIONAL CENTER A
+345  9FRC         FOGGY RIDGE COMMONS 4 CONDOMINIUM
+346  9GBP               GULF-BOULEVARD PROFESSIONAL
+347  9GRN                           RICHEY  MED PRO
+348  9HIO  HIGHLAND OAKS MEDICAL CENTER CONDOMINIUM
+349  9HUD    BAYONET POINT MEDICAL PARK CONDOMINIUM
+350  9IC7                    COMPARK 75 CONDOMINIUM
+351  9KPM           PASCO MEDICAL PLAZA CONDOMINIUM
+352  9LPC   LIBERTY PROFESSIONAL CENTER CONDOMINIUM
+353  9LSO              LAKESIDE OFFICE PARK 1 CONDO
+354  9MER           CENTENNIAL BUILDING CONDOMINIUM
+355  9MIL   MILL RUN PROFESSIONAL PLAZA CONDOMINIUM
+356  9MLP         MILLPOND PROFESSIONAL CONDOMINIUM
+357  9MUL                                      9MUL
+358  9NMM              NEWPORTER MEDICAL MALL CONDO
+359  9OMN                              MAIN  ST PRO
+360  9PCP                PASCO CENTER PHASE 1 CONDO
+361  9RDF                      REDF  AT  KS COMMERC
+362  9RDG                 RIDGE GARDENS OFFICE PARK
+363  9REN                      RENA  AT  N OAKS COM
+364  9RVC                           RIVER CROSS PRO
+365  9RWE                RIDGEWOOD EXECUTIVE CENTER
+366  9RYP         CYPRESS 56 COMMERCIAL CONDOMINIUM
+367  9SUN         SUNBELT OFFICE CENTER CONDOMINIUM
+368  9SVS           SEVEN SPRINGS PLACE CONDOMINIUM
+369  9TRN                            GATOR CROSSING
+370  9TSC      TRINTY SQUARE COMMERCIAL CONDOMINIUM
+371  9WCP         WESLEY CHAPEL COMMONS CONDOMINIUM
+372  9WPI                           WEST PASCO WARE
+373  9WPM        MAASER BUSINESS CENTER CONDOMINIUM
+374  9WWP                WINDSOR WOODS PROFESSIONAL
+375  9YCR            CEDAR RIDGE OFFICE CONDOMINIUM
+376  9YEP                 EMBASSY PLAZA CONDOMINIUM
+377  9YHP                 HEATHER PLACE CONDOMINIUM
+378  ABAY                       AVILA BAY TOWNHOMES
+379  ABDN                                  ABERDEEN
+380  ABGL                                ABBEY GLEN
+381  ABWD                               BELLA TERRA
+382  ADGD                             ADELL GARDENS
+383  AGVL                         ANGUS VALLEY UNIT
+384  AKAC                               ALKEN ACRES
+385  AKSB                                ALASKA SUB
+386  ALAC                    ALTO ACRES SUBDIVISION
+387  ALFA                      ALFA VILLAGE ESTATES
+388  ALFM                    ALTO FARMS SUBDIVISION
+389  ALSC                                    ALSACE
+390  ANCT                     ANCLOTE RIVER HEIGHTS
+391  ANRV                     ANCLOTE RIVER ESTATES
+392  ANTC                         ANCLOTE HIGHLANDS
+393  ANVI                               ANAND VIHAR
+394  APTR                          APPALOOSA TRAILS
+395  ARAC                       ANCLOTE RIVER ACRES
+396  ARDM                           ARDMORE GARDENS
+397  ARES                             ARROW ESTATES
+398  ARIS                          ARISTIDA PHASE I
+399  ARLG                 ARLINGTON WOODS PHASE 1-A
+--- sheet Building Use: 67 rows; columns ['CODE', 'DESCRIPTION']
+    CODE                    DESCRIPTION
+0    100      Single Family Residential
+1    200                    Mobile Home
+2    300   Multi Family (5+ Units/Bldg)
+3    400                    Condominium
+4    500     Multi Story Retirement Apt
+5    700           Single Family Villas
+6    800  Multi Family (<5 Units/ Bldg)
+7   1100      Retail Stores (One Story)
+8   1200            Stores / Office SFR
+9   1300     Dept Stores, Discount Whse
+10  1400          Grocery Store, Market
+11  1500                       Not Used
+12  1600          Shopping Center Local
+13  1700            Offices (One Story)
+14  1800          Offices (Multi Story)
+15  1900   Offices Professional/Medical
+16  2000                       Airports
+17  2100     Restaurants (Full Service)
+18  2200        Restaurants (Fast Food)
+19  2300         Financial Institutions
+20  2400              Insurance Company
+21  2500                  Service Shops
+22  2600    Service Stations, Old Style
+23  2700    Vehicle Sales/Dealer/Repair
+24  2800                    MH RV Parks
+25  2900        Wholesale Manufacturing
+26  3000           Florist, Greenhouses
+27  3100             Theaters, Drive In
+28  3200             Theaters, Enclosed
+29  3300     Bars, Lounges, Night Clubs
+30  3400         Bowling Alleys, Arenas
+31  3500             Tourist Attraction
+32  3600                          Camps
+33  3700                    Race Tracks
+34  3800                   Golf Courses
+35  3900                  Hotels Motels
+36  4100            Light Manufacturing
+37  4200               Heavy Industrial
+38  4300                   Lumber Yards
+39  4600                Metal Bldg Misc
+40  4800              Warehouses, Block
+41  6800              Daries, Feed Lots
+42  6900                    Ornamentals
+43  7100                       Churches
+44  7200     Schools, Colleges, Private
+45  7300             Hospitals, Private
+46  7400  Nursing Homes/Skilled Nursing
+47  7500                      Orphanage
+48  7600         Mortuary, Funeral Home
+49  7700           Clubs, Lodges, Halls
+50  7800   Inpatient/Outpatient Clinics
+51  7900       Warehouses, Mini Storage
+52  8000                Metal Buildings
+53  8100                       Military
+54  8200             Forest, Park, Etc.
+55  8300                Schools, Public
+56  8400               Colleges, Public
+57  8500              Hospitals, Public
+58  8600               County Buildings
+59  8700                State Buildings
+60  8800              Federal Buildings
+61  8900            Municipal Buildings
+62  9100              Utility Buildings
+63  9200                         Mining
+64  9300              Petroleum and Gas
+65  9400   Telephone Exchange Buildings
+66  9500             Convenience Stores
+--- sheet TPP Exemption: 37 rows; columns ['CODE', 'DESCRIPTION']
+     CODE                     DESCRIPTION
+0      24                Total Disability
+1      25              Partial Benevolent
+2      29              Parks & Recreation
+3      30                       Religious
+4      31                       Education
+5      32        Non-Profit Organizations
+6      33                      Cemeteries
+7      34                    County Lands
+8      35                 Municipal Lands
+9      36                     State Lands
+10     37                      U.S. Lands
+11     38                   Water & Sewer
+12     43                       Hospitals
+13     54                    Civic Center
+14     BR                   Blind/Widower
+15     BW                     Blind/Widow
+16     BX                           Blind
+17     D2                  2 Disabilities
+18     DR              Widower/Disability
+19     DV              Veteran/Disability
+20     DX                      Disability
+21     EX          Standard 25K Exemption
+22  EXOVR      Standard 25K Exemption OVR
+23     MD              Widower/Disability
+24      O              Affordable Housing
+25      Q  Renewable Energy Source Device
+26     V2                      2 Veterans
+27     VB                   Veteran/Blind
+28     VQ           Veteran/Widow/Widower
+29     VR                 Veteran/Widower
+30     VW                   Veteran/Widow
+31     VX       Veteran Service Connected
+32     W2               2 Widows/Widowers
+33     WD                Widow/Disability
+34     WR                         Widower
+35     WW                   Widow/Widower
+36     WX                           Widow
+--- sheet Building Model: 10 rows; columns ['CODE', 'DESCRIPTION']
+  CODE     DESCRIPTION
+0    0          Vacant
+1    1   Single Family
+2    2    Manufactured
+3    3    Multi Family
+4    4      Condo Main
+5    5       Res Condo
+6    6       Com Condo
+7   94      Commercial
+8   95  Metal Building
+9   96       Warehouse
+--- sheet Structual Frame: 7 rows; columns ['CODE', 'DESCRIPTION']
+  CODE          DESCRIPTION
+0    0                  NaN
+1    1           Wood Frame
+2    2              Masonry
+3    3  Reinforced Concrete
+4    4                Steel
+5    5      Fireproof Steel
+6    6              Special
+--- sheet Ceiling Wall Quality: 7 rows; columns ['CODE', 'DESCRIPTION']
+  CODE             DESCRIPTION
+0    0                     NaN
+1    1        Sus Ceiling Only
+2    2      Unsus Ceiling Only
+3    3    Sus Ceiling/Min Wall
+4    4  Unsus Ceiling/Min Wall
+5    5    Sus Ceiling/Fin Wall
+6    6  Unsus Ceiling/Fin Wall
+--- sheet HVAC Type: 3 rows; columns ['CODE', 'DESCRIPTION']
+  CODE    DESCRIPTION
+0    0            NaN
+1    1  Packaged HVAC
+2    2     Split HVAC
+--- sheet Quality Adjustment: 7 rows; columns ['CODE', 'DESCRIPTION']
+  CODE       DESCRIPTION
+0    0               NaN
+1    1  Minimum/Low Cost
+2    2     Below Average
+3    3           Average
+4    4     Above Average
+5    5         Excellent
+6    6          Superior
+--- sheet Land Type: 4 rows; columns ['CODE', 'DESCRIPTION']
+  CODE  DESCRIPTION
+0   AC         Acre
+1   LT          Lot
+2   SF  Square Feet
+3   UN         Unit
+--- sheet Value Change: 8 rows; columns ['CODE', 'DESCRIPTION']
+  CODE                   DESCRIPTION
+0    1                    VAB Change
+1    2         Court Required Change
+2    3    Physical Change w/Petition
+3    4  Physical Change w/o Petition
+4    5       Other Change w/Petition
+5    6     Other Change w/o Petition
+6   97                Parcel Combine
+7   98                  Parcel Split
+--- sheet Income Use: 166 rows; columns ['CODE', 'DESCRIPTION']
+     CODE      DESCRIPTION
+0     01A            SFR A
+1     01B            SFR B
+2     01C            SFR C
+3     01D            SFR D
+4     01W          SFR H2O
+5      02               MH
+6    03A1         AptA 1BR
+7    03A2         AptA 2BR
+8    03A3         AptA 3BR
+9    03AG        AptAG Unk
+10   03B1        AptB1 1BR
+11   03B2        AptB2 2BR
+12   03B3        AptB3 3BR
+13   03BG        AptBG Unk
+14   03C1         AptC 1BR
+15   03C2         AptC 2BR
+16   03C3         AptC 3BR
+17   03CG         AptC Unk
+18   03D1         AptD 1BR
+19   03D2         AptD 2BR
+20   03D3         AptD 3BR
+21   03DG         AptD Unk
+22   03E1         AptE 1BR
+23   03E2         AptE 2BR
+24   03E3         AptE 3BR
+25   03EG         AptE Unk
+26   03L1         AptL 1BR
+27   03L2         AptL 2BR
+28   03L3         AptL 3BR
+29   03LG         AptL Unk
+30    03S    Apt Summer Lk
+31   03T1         AptT 1BR
+32   03T2         AptT 2BR
+33   03T3         AptT 3BR
+34   03TG         AptT Unk
+35   03TL        AptT Lows
+36    04A           CondoA
+37    04B           CondoB
+38    04C           CondoC
+39    04F        CondoFlex
+40    04R      CondoResort
+41    04W         CondoH2O
+42    05I     Indep Living
+43     07            Villa
+44     08         Duplexes
+45    08W          Dupe WF
+46    11A          GENERAL
+47    11B            RetlB
+48    11C            RetlC
+49    11D            RetlD
+50    11E            RetlE
+51    11F            RetlF
+52    11G            RetlG
+53    11L            RetlL
+54    11M            RetlM
+55    11N            RetlN
+56    11P            RetlP
+57    11Q            RetlQ
+58   11TR          RetlGen
+59    11U            RetlU
+60    11W            RetlW
+61     12            SFR12
+62    13A     Dept Store A
+63    13B     Dept Store B
+64    13C     Dept Store C
+65    13D     Dept Store D
+66    13F     Dept Store F
+67    13G     Dept Store G
+68    13H     Dept Store H
+69    14A        Grocery A
+70    14B        Grocery B
+71    14C        Grocery C
+72    14D        Grocery D
+73    14F        Grocery F
+74    14G        Grocery G
+75    14H        Grocery H
+76    15L        Lifestyle
+77    16A       Shop Ctr A
+78    16B       Shop Ctr B
+79    16C       Shop Ctr C
+80    16D       Shop Ctr D
+81    16F       Shop Ctr F
+82    16G       Shop Ctr G
+83    16H       Shop Ctr H
+84    16M       Mall Local
+85     17          Gen Ofc
+86    17H      Office Hosp
+87     18  Multi Story Ofc
+88    19A       Prof Ofc A
+89    19G       Prof Off G
+90    19H  Office HospArea
+91   19MG       Prof OffMG
+92    19N      Prof OffNet
+93    19P    Prof Ofc PCC 
+94     20  Airport Hangars
+95     21          Rest 21
+96    21A         Rest 21A
+97     22       FF Rest 22
+98    22A      FF Rest 22A
+99    23A           Bank A
+100   23B           Bank B
+101   23C           Bank C
+102   25A           Shop A
+103   25B           Shop B
+104   25C           Shop C
+105   25G      ShopGeneric
+106   25N         Shop Net
+107    27       Auto Deal.
+108    32          Theatre
+109    33       CLB/LOUNGE
+110    34          Bowling
+111   38B          Golf 2A
+112   38C   Golf Course 1B
+113   38E   Golf Course 2B
+114   38F    Golf Course 3
+115   38G    Golf Course 4
+116   38H    Golf Course 5
+117   38I    Golf Course 6
+118   39A  Motel Upper-Mid
+119   39B  Motel Mid-Scale
+120   39D    Motel Economy
+121   39E     Motel Budget
+122   39P    Motel Premium
+123   39R     Resort Condo
+124   39S      Motel Suite
+125   41L     Large Indus.
+126   42H      Heavy Indus
+127  48BC             DCBC
+128   48C      Ware C Code
+129   48F        Ware Flex
+130   48G     Ware General
+131   48H     Ware HomeDep
+132   48I     Ware I Codes
+133   48L       Ware Lowes
+134   48N       Ware N Net
+135   48O      Ware O Code
+136   48P      Ware P Code
+137   48R    Ware Rent Gar
+138  48SC   Ware SamCostco
+139   74A              ALF
+140   74N        NURS HOME
+141   79A   SelfStore AC'd
+142   79B      SelfStore B
+143   79C      SelfStore C
+144   79O    Self Cov.Park
+145   79P  Self Outdr.Park
+146    95          C Store
+147   95N        C Store N
+148    96        CELL SITE
+149    98          MIXSQFT
+150    99       LAND LEASE
+151   MH1      MH Park CL1
+152   MH2      MH Park CL2
+153   MH3      MH Park CL3
+154   MH4      MH Park CL4
+155   MH5      MH Park CL5
+156   MU1        MH1 w/uts
+157   MU2        MH2 w/uts
+158   MU3        MH3 w/uts
+159   RU1        RV1 w/uts
+160   RU2        RV2 w/uts
+161   RU3        RV3 w/uts
+162   RV1      RV Park CL1
+163   RV2      RV Park CL2
+164   RV3      RV Park CL3
+165   RV4      RV Park CL4
+--- sheet Land Zoning: 111 rows; columns ['CODE', 'DESCRIPTION']
+       CODE                              DESCRIPTION
+0      000A                                     000A
+1      000C                                     000C
+2      00A0                                     00A0
+3      00A1                                     00A1
+4      00AC                                     00AC
+5      00AG                                     00AG
+6      00AR                                     00AR
+7      00C0                                     00C0
+8      00C1                                     00C1
+9      00C2                                     00C2
+10     00C3                                     00C3
+11     00CG                                     00CG
+12     00CH                                     00CH
+13     00CN                                     00CN
+14     00ER                                     00ER
+15     00I1                                     00I1
+16     00I2                                     00I2
+17     00IH                                     00IH
+18     00L1                                     00L1
+19     00LI                                     00LI
+20     00M1                                     00M1
+21     00M2                                     00M2
+22     00M3                                     00M3
+23     00OP                                     00OP
+24     00P1                                     00P1
+25     00R1                                     00R1
+26     00R2                                     00R2
+27     00R3                                     00R3
+28     00R4                                     00R4
+29     00RC                                     00RC
+30     00RL                                     00RL
+31     00RM                                     00RM
+32     00RS                                     00RS
+33     00SD                                     00SD
+34     0AC1                                     0AC1
+35     0AP1                                     0AP1
+36     0AP2                                     0AP2
+37     0AR1                                     0AR1
+38     0AR5                                     0AR5
+39     0BUS                                     0BUS
+40     0CBD                                     0CBD
+41     0ER2                                     0ER2
+42     0ILW                                     0ILW
+43     0LDR                                     0LDR
+44     0MDR                                     0MDR
+45     0MF1                                     0MF1
+46     0MF2                                     0MF2
+47     0MF3                                     0MF3
+48     0MHP                                     0MHP
+49     0OFC                                     0OFC
+50     0OUA                                     0OUA
+51     0PD1                                     0PD1
+52     0PMF                                     0PMF
+53     0PO1                                     0PO1
+54     0PO2                                     0PO2
+55     0POL                                     0POL
+56     0PSF                                     0PSF
+57     0PUD                                     0PUD
+58     0R1B                                     0R1B
+59     0R1C                                     0R1C
+60     0RA3                                     0RA3
+61     0RDR                                     0RDR
+62     0REC                                     0REC
+63     0RG1                                     0RG1
+64     0RG2                                     0RG2
+65     0RIO                                     0RIO
+66     0RM1                                     0RM1
+67     0RMH                                     0RMH
+68     0RS1                                     0RS1
+69     0RS2                                     0RS2
+70     0RS3                                     0RS3
+71     0TMU                                     0TMU
+72      AP1                                  Airport
+73      AP2                          Airport related
+74     AR5M                                     AR5M
+75       C1                  Neighborhood commercial
+76       C2                     Community commercial
+77       C3                       General commercial
+78     DNTN                                     DNTN
+79       ER                       Estate residential
+80     FBC3                                     FBC3
+81     FBC4                                     FBC4
+82     FBC5                                     FBC5
+83     INST                                     INST
+84       LI                         Light industrial
+85       M1                  Mobile home subdivision
+86       M2                         Mobile home park
+87       M3                Recreational vehicle park
+88     MF30                                     MF30
+89     MPUD                                     MPUD
+90       OP                      Office/professional
+91     PDH1                                     PDH1
+92     PDH2                                     PDH2
+93      PUD                 Planned Unit Development
+94       R1                  Low density residential
+95     R1MH                                     R1MH
+96       R2                Single-family residential
+97     R2MH                                     R2MH
+98       R3               Medium density residential
+99       R4                 Multi-family residential
+100      RC                  Recreation/conservation
+101      SD                         Special District
+102      T3                                 Suburban
+103      T4                            General Urban
+104      T5                             Urban Center
+105    TCBD                                     TCBD
+106  TCBD-H  Traditional central business - historic
+107    TCBH                                     TCBH
+108     TMU                    Traditional mixed use
+109   TMU-H         Traditional mixed use - historic
+110    TMUH                                     TMUH
+--- sheet Sale Qualification Codes (DOR): 29 rows; columns ['CODE', 'DESCRIPTION']
+   CODE                DESCRIPTION
+0     1        Examination Of Deed
+1     2          Credible Evidence
+2     3    Qualified, Physical Chg
+3     4       Qualified, Legal Chg
+4     5     Qualified, Multiparcel
+5    11            Corrective Deed
+6    12        Financial Inst Deed
+7    13         Cemetary Lots Deed
+8    14   Reservation Of Occupancy
+9    15  Consideration Indetermine
+10   16      Partial Interest Deed
+11   17  Religious/Charitable Ent.
+12   18          Government Agency
+13   19                 Bankruptcy
+14   20          Utility Companies
+15   30         Affiliated Parties
+16   31   Trade Or Exchange (Land)
+17   32      Pre-Construction Sale
+18   33    Unbuilt Common Property
+19   34   Satisfaction/Pmt In Full
+20   35  Non-Typical Personal Prop
+21   36     Atypical Costs Of Sale
+22   37    Not Exposed To Open Mkt
+23   38        Prevent Foreclosure
+24   39       Different Sale Price
+25   40   Non-Market Finance/Lease
+26   41    Other Disqualified Sale
+27   98                Deed Errors
+28   99          Sale W/In 90 Days

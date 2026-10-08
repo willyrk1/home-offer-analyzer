@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Value a Home · Home Offer Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <nav class="nav"><a href="index.html">Market trends</a><a href="value.html" aria-current="page">Value a home</a></nav>
+      <h1>Value a home</h1>
+      <p class="sub">Fair value from recent closed sales nearby, adjusted for each difference, with every step shown. Pasco County, FL.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <form id="lookup" class="picker" autocomplete="off">
+      <label for="addr">Address</label>
+      <input id="addr" class="wide" placeholder="1295 Montgomery Bell Rd, Wesley Chapel, FL 33543" required>
+      <label for="list">List price</label>
+      <input id="list" inputmode="numeric" placeholder="optional" class="narrow">
+      <button type="submit">Value it</button>
+    </form>
+    <p id="status" class="explain" role="status"></p>
+
+    <section id="result" hidden></section>
+  </main>
+
+  <footer class="wrap foot">
+    <p id="model-note"></p>
+    <p>Data: Pasco County Property Appraiser (parcels and recorded sales, updated weekly) and Zillow Research (home value index, used to bring sale prices to today). Not an appraisal or financial advice. Condition, upgrades and views aren't in the data; use your own judgment on those.</p>
+  </footer>
+
+  <script src="comps.js"></script>
+  <script src="value.js"></script>
+</body>
+</html>

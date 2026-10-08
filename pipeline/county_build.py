@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from . import valuation
+from . import site_export, valuation
 from .build import _clean
 from .counties import pasco
 
@@ -34,7 +34,9 @@ def build_county(name: str, raw_dir: Path, work_dir: Path, site_dir: Path,
 
     parcels = adapter.build_parcels(paths)
     all_sales = adapter.load_sales(paths["sales"])
-    sales = adapter.build_sales(paths, parcels)
+    sales_with_excluded = adapter.build_sales(paths, parcels, keep_excluded=True)
+    sales = sales_with_excluded[sales_with_excluded["sale_class"].isin(["market", "distressed"])]
+    sales = sales.reset_index(drop=True)
     model = valuation.fit(sales)
 
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -58,7 +60,14 @@ def build_county(name: str, raw_dir: Path, work_dir: Path, site_dir: Path,
                                           & (sales["date"] > sales["date"].max() - pd.Timedelta(days=90))).sum()),
     }
     (out / "summary.json").write_text(json.dumps(_clean(summary), indent=1))
-    return {"summary": summary, "model": model}
+
+    zip_series = {}
+    for f in sorted((site_dir / "zips").glob("*.json")):
+        rec = json.loads(f.read_text())
+        zip_series[rec["zip"]] = rec["series"]["zhvi"]
+    meta = site_export.export_county(name, parcels, sales_with_excluded, _clean(model),
+                                     _clean(summary), site_dir, zip_series)
+    return {"summary": summary, "model": model, "meta": meta}
 
 
 def main(argv=None):

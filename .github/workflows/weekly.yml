@@ -44,6 +44,11 @@ jobs:
       - name: Download data and build site files
         run: python -m pipeline.build
 
+      - name: Pasco comps data (parcels, sales, county model)
+        # A county failure shouldn't block the market pages from publishing.
+        continue-on-error: true
+        run: python -u -m pipeline.county_build --county pasco
+
       - name: Commit new forecast archive (also keeps the schedule active)
         run: |
           git config user.name "github-actions[bot]"

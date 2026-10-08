@@ -278,15 +278,61 @@ def load_sales(zip_path: Path, since: str = "2016-01-01") -> pd.DataFrame:
     return s.drop(columns=["improved"]).reset_index(drop=True)
 
 
-def build_sales(paths: dict[str, Path], parcels: pd.DataFrame) -> pd.DataFrame:
-    """Market and distressed residential sales joined to parcel features."""
+QUAL_CODE_TEXT = {
+    11: "corrective deed", 12: "bank or lender sale", 13: "cemetery lot", 14: "reservation of occupancy",
+    15: "price can't be determined", 16: "partial interest", 17: "religious or charitable entity",
+    18: "government agency", 19: "bankruptcy", 20: "utility company", 30: "related parties",
+    31: "land trade or exchange", 32: "pre-construction sale", 33: "unbuilt common property",
+    34: "satisfaction of agreement", 35: "includes personal property", 36: "unusual costs of sale",
+    37: "not exposed to the open market", 38: "short sale to prevent foreclosure",
+    39: "different sale price", 40: "non-market financing or lease", 41: "other disqualified sale",
+    98: "deed error", 99: "resold within 90 days",
+}
+DEED_TEXT = {"QC": "quit-claim deed", "CT": "certificate of title (foreclosure)", "SD": "sheriff's deed",
+             "TX": "tax deed", "FJ": "final judgment", "TR": "trustee's deed", "PR": "executor's deed"}
+
+
+def sale_reason(row) -> str:
+    """Plain-language reason a sale was excluded or down-weighted."""
+    if row.get("sale_class") == "market":
+        return ""
+    if row.get("multi_parcel"):
+        return "multi-parcel sale (one price for several properties)"
+    if (row.get("price") or 0) < 10_000:
+        return "nominal price, typical of a family or paperwork transfer"
+    code = pd.to_numeric(row.get("qual_code"), errors="coerce")
+    parts = []
+    if pd.notna(code) and int(code) in QUAL_CODE_TEXT:
+        parts.append(QUAL_CODE_TEXT[int(code)])
+    deed = str(row.get("deed_type") or "").upper()
+    if deed in DEED_TEXT:
+        parts.append(DEED_TEXT[deed])
+    return "; ".join(parts) or "appraiser marked it unqualified"
+
+
+def build_sales(paths: dict[str, Path], parcels: pd.DataFrame, keep_excluded: bool = False) -> pd.DataFrame:
+    """Residential sales joined to parcel features.
+
+    By default only market and distressed sales are returned. With
+    keep_excluded=True every residential sale is returned, excluded ones
+    (non_market, or price-per-sq-ft outliers) with a reason, so the site can
+    explain why a sale isn't a comp.
+    """
     s = load_sales(paths["sales"])
-    s = s[s["sale_class"].isin(["market", "distressed"])]
+    if not keep_excluded:
+        s = s[s["sale_class"].isin(["market", "distressed"])]
     s = s.merge(parcels, on="parcel_id", how="inner")
-    s = s[s["sqft"].fillna(0) >= 400]
+    s = s[s["sqft"].fillna(0) >= 400].copy()
     s["ppsf"] = s["price"] / s["sqft"]
-    # Drop extreme $/sf outliers within each property type (data errors, partial interests).
-    q = s.groupby("property_type")["ppsf"].transform(lambda x: x.quantile(0.005))
-    r = s.groupby("property_type")["ppsf"].transform(lambda x: x.quantile(0.995))
-    s = s[(s["ppsf"] >= q) & (s["ppsf"] <= r)]
+    usable = s["sale_class"].isin(["market", "distressed"])
+    # Extreme $/sf outliers within each property type (data errors, partial interests).
+    lo = s[usable].groupby("property_type")["ppsf"].quantile(0.005)
+    hi = s[usable].groupby("property_type")["ppsf"].quantile(0.995)
+    outlier = usable & ((s["ppsf"] < s["property_type"].map(lo)) | (s["ppsf"] > s["property_type"].map(hi)))
+    s["reason"] = [sale_reason(r) for r in s[["sale_class", "multi_parcel", "price", "qual_code",
+                                                "deed_type"]].to_dict("records")]
+    s.loc[outlier, "sale_class"] = "non_market"
+    s.loc[outlier, "reason"] = "price per sq ft far outside the normal range (likely a data error)"
+    if not keep_excluded:
+        s = s[~outlier]
     return s.sort_values("date").reset_index(drop=True)

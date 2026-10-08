@@ -91,3 +91,45 @@ td.num, th.num { text-align: right; }
 tbody tr { cursor: pointer; }
 tbody tr:hover { background: var(--bg); }
 .foot { color: var(--muted); font-size: 13px; padding-bottom: 32px; }
+
+/* ---- navigation and value page ---- */
+.nav { display: flex; gap: 16px; margin-bottom: 10px; font-size: 14px; }
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a[aria-current="page"] { color: var(--ink); font-weight: 600; }
+.nav a:hover { color: var(--accent); }
+input.wide { flex: 1 1 320px; min-width: 0; }
+input.narrow { width: 130px; }
+button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--bg); cursor: pointer; font-weight: 600; }
+button.link { background: none; border: 0; color: var(--accent); padding: 2px 4px; font-weight: 500; }
+.tile.hero { border-color: var(--accent); }
+.tile.hero .value { font-size: 30px; color: var(--accent); }
+.tile .value.small { font-size: 18px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 14px 0; font-size: 14px; }
+.controls input { margin-right: 6px; }
+table.comps td { vertical-align: top; }
+table.comps td.strong { font-weight: 650; }
+table.comps td.actions { white-space: nowrap; }
+.tag-sm { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 0 6px; margin-left: 4px; }
+.flags { font-size: 12px; color: var(--seller); margin-top: 2px; white-space: normal; }
+tr.math > td { background: var(--bg); padding: 10px 14px; }
+.mathtable { width: auto; min-width: 480px; font-size: 13px; }
+.mathtable td { border: 0; padding: 3px 10px 3px 0; }
+.mathtable tr.total td { border-top: 1px solid var(--line); font-weight: 650; padding-top: 6px; }
+.why { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-top: 10px; }
+.why ul { margin: 6px 0; padding-left: 20px; }
+@media (max-width: 600px) { .mathtable { min-width: 0; } }
+table.comps td.addr { white-space: normal; min-width: 170px; }
+table.comps th, table.comps td { padding: 8px 7px; }
+.table-scroll .mathtable td { white-space: normal; }
+@media (max-width: 700px) {
+  table.comps thead { display: none; }
+  table.comps, table.comps tbody, table.comps tr.comp, table.comps tr.math, table.comps tr.math > td { display: block; width: 100%; }
+  table.comps tr.math[hidden] { display: none; }
+  table.comps tr.comp { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  table.comps tr.comp td { border: 0; padding: 2px 0; text-align: left; white-space: normal; }
+  table.comps tr.comp td.addr { grid-column: 1 / -1; font-weight: 600; min-width: 0; }
+  table.comps tr.comp td[data-label]:not(.addr)::before { content: attr(data-label) ": "; color: var(--muted); font-size: 12px; }
+  table.comps tr.comp td.actions { grid-column: 1 / -1; }
+  .mathtable, .mathtable tbody { display: table; width: 100%; }
+}

@@ -1,6 +1,6 @@
 # Home Offer Analyzer
 
-A free, static web site that values listed homes from closed-sale comps and suggests offer prices, with every step visible. This repo is at **step 1 of the build plan: market-only mode**.
+A free, static web site that values listed homes from closed-sale comps and suggests offer prices, with every step visible. Steps 1–3 of the build plan are done: market trends for covered ZIPs, and comps-based valuation for Pasco County.
 
 ## What works now
 
@@ -17,6 +17,18 @@ A free, static web site that values listed homes from closed-sale comps and sugg
 - **A plain-language read** ("buyer leverage rising" / "mixed" / "seller leverage rising") from the leading indicators, with the scoring shown.
 - **Forecast archive:** each new Zillow forecast is saved to `data/archive/` so it can be backtested later. This archive can't be recreated, so it starts on the first run.
 - **The site** (`site/`): ZIP search, sortable table of all covered ZIPs, indicator tiles and trend charts. No external libraries.
+
+## Value a home (Pasco County)
+
+`site/value.html` values any Pasco residential parcel from recent closed sales:
+
+- **Data:** the Pasco Property Appraiser's weekly bulk files (parcels, buildings, pools, addresses, recorded sales) and the county parcel map for locations. Owner files are never downloaded.
+- **Sale classification:** the appraiser's qualified flag and state codes. Market sales count fully; bank-owned, foreclosure-deed, short and bankruptcy sales count at half weight; family, related-party, multi-parcel and other non-market transfers are excluded (with the reason shown).
+- **County model:** a regression on the last two years of market sales gives the value of size, age, lot, baths, pool, stories and quality grade (`pipeline/valuation.py`).
+- **Comps:** nearest similar sales, widening the radius and then the time window until there are at least 6; each is time-adjusted with the ZIP home value index and feature-adjusted with the county model, then weighted by similarity and adjustment size (`pipeline/comps.py`, mirrored in `site/comps.js`; a test keeps the two identical).
+- **On the page:** show-the-math for each comp, remove a comp, include or exclude distressed sales, and "why wasn't this sale used?" with a what-if and an option to add it anyway.
+
+`python -m pipeline.comps_report "<address>"` prints the same analysis as text, and the **Comps report** workflow runs it on the real data.
 
 ## Coverage
 
@@ -60,10 +72,10 @@ tests/                   synthetic fixtures in the providers' real formats, and 
 
 ## Next steps (from the spec)
 
-1. ~~Market-only mode~~ ← this repo
-2. First county sales adapter (Pasco Property Appraiser), sale classification, Redfin recent-sales upload
-3. County regression, comp selection, "show the math"
-4. Leverage table and offer recommendation
+1. ~~Market-only mode~~
+2. ~~Pasco sales adapter and sale classification~~ (Redfin recent-sales upload still to do)
+3. ~~County regression, comp selection, "show the math", "why not this comp"~~
+4. Leverage table and offer recommendation; backtest across many sales
 5. Own forecast model, backtests, forecast blend
 6. User-suggested comps, competition check, builder floor, concessions converter
 

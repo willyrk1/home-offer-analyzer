@@ -36,11 +36,22 @@ jobs:
           IFS=';' read -ra ADDR <<< "$ADDRESSES"
           python -u -m pipeline.comps_report "${ADDR[@]}" 2>&1 | tee comps-report.txt
 
+      - name: Browser engine on the same data (must match the Python report)
+        env:
+          ADDRESSES: ${{ inputs.addresses }}
+        run: |
+          IFS=';' read -ra ADDR <<< "$ADDRESSES"
+          for a in "${ADDR[@]}"; do
+            echo "== $a" >> comps-js.txt
+            node tests/run_comps.js site/data pasco "$a" >> comps-js.txt 2>&1 || true
+          done
+          cp comps-js.txt /tmp/ 2>/dev/null || true
+
       - name: Save to probe-output branch
         if: always()
         run: |
           mkdir -p /tmp/out
-          cp county-build.txt comps-report.txt /tmp/out/ 2>/dev/null || true
+          cp county-build.txt comps-report.txt comps-js.txt /tmp/out/ 2>/dev/null || true
           cp site/data/counties/pasco/*.json /tmp/out/ 2>/dev/null || true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

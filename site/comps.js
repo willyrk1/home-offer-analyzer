@@ -237,6 +237,27 @@
     return [fair * Math.exp(-h), fair * Math.exp(h)];
   }
 
+  // ---------- recent builder closings (pipeline/builder.py closings_low): context for the builder floor ----------
+  const BUILDER_MONTHS = 6, BUILDER_MIN_SALES = 3;
+  const isBuilderSale = (s) => s.sale_class === "market" && isNum(s.year_built) && s.sqft > 0 &&
+    parseDate(s.date).getUTCFullYear() - s.year_built <= 1;
+  function builderClosingsLow(subject, sales, asOfStr) {
+    const asOf = parseDate(asOfStr), from = addMonths(asOf, -BUILDER_MONTHS);
+    const b = sales.filter((s) => isBuilderSale(s) && s.subdivision === subject.subdivision &&
+      s.property_type === subject.property_type && s.parcel_id !== subject.parcel_id &&
+      parseDate(s.date) <= asOf && parseDate(s.date) > from);
+    if (b.length < BUILDER_MIN_SALES) return null;
+    let low = b[0];
+    for (const s of b) if (s.price / s.sqft < low.price / low.sqft) low = s;
+    const ppsf = low.price / low.sqft;
+    return { value: ppsf * subject.sqft, ppsf, n: b.length,
+      lowest: { address: low.address, date: low.date, price: low.price, sqft: low.sqft } };
+  }
+  /** New construction: built in the current or last year (as of the latest recorded sale). */
+  function looksNew(subject, asOfStr) {
+    return isNum(subject.year_built) && parseDate(asOfStr).getUTCFullYear() - subject.year_built <= 1;
+  }
+
   function combineMethods(subject, comps, fair, spread) {
     const m = { comps: { fair_value: fair, range: fair == null ? null : [fair - spread, fair + spread] } };
     m.assessed = comps.length ? assessedValue(subject, comps) : { fair_value: null, range: null };
@@ -338,7 +359,7 @@
     };
   }
 
-  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, METHODS, calibratedRange, normalizeAddress, parseAddress, candidateZips, fromTable, design,
+  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, METHODS, calibratedRange, builderClosingsLow, looksNew, normalizeAddress, parseAddress, candidateZips, fromTable, design,
     timeFactor, valueSubject, explain, haversine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Comps = api;

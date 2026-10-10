@@ -73,6 +73,8 @@ async function run(addressText) {
   state.ctx = { ...common, subject: found.subject, sales, market };
   state.opts = { includeDistressed: true, excluded: [], forced: [] };
   state.explain = null;
+  state.builder = false; state.builderOwned = false;                  // per home: off by default
+  Object.assign(offerIn, { dom: "", lot: "", cpsf: "", carry: "", months: "" });
   $("#status").textContent = "";
   history.replaceState(null, "", `#a=${encodeURIComponent(addressText)}`);
   remember(found.subject);
@@ -285,8 +287,10 @@ function rangeCheck(method) {
 
 // ---------- offer (site/offer.js) ----------
 const OFFER_KEY = "hoa:offer";
-const offerIn = Object.assign({ dom: "", credit: "10000", rate: "6.5", down: "20", drop: "0.25" },
-  (() => { try { return JSON.parse(localStorage.getItem(OFFER_KEY)) || {}; } catch { return {}; } })(), { dom: "" });
+const offerIn = Object.assign({ dom: "", credit: "10000", rate: "6.5", down: "20", drop: "0.25", margin: "15" },
+  (() => { try { return JSON.parse(localStorage.getItem(OFFER_KEY)) || {}; } catch { return {}; } })(),
+  { dom: "", lot: "", cpsf: "", carry: "", months: "" });          // per-property: never remembered
+const BUILDER_FIELDS = [["lot", "b-lot"], ["cpsf", "b-cpsf"], ["margin", "b-margin"], ["carry", "b-carry"], ["months", "b-months"]];
 const num0 = (s) => parseFloat(String(s || "").replace(/[^\d.]/g, ""));
 const listPrice = () => num0($("#list").value) || null;
 const monthName = (ym) => ym ? new Date(ym + "-01T00:00:00Z").toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : "";
@@ -304,6 +308,7 @@ function offerHtml(r, method) {
     <section class="offer" aria-labelledby="offer-h">
       <h3 id="offer-h">Offer</h3>
       <div id="offer-out"></div>
+      ${builderHtml()}
       <div class="picker small">
         <label for="dom">Days on market</label>
         <input id="dom" class="narrow" inputmode="numeric" placeholder="optional" value="${esc(offerIn.dom)}">
@@ -331,6 +336,7 @@ function bindOffer(r, method) {
     renderOffer(r, method);
   };
   ["dom", "c-credit", "c-rate", "c-down", "c-drop"].forEach((id) => $("#" + id).addEventListener("input", update));
+  bindBuilder(r, method);
   renderOffer(r, method);
 }
 
@@ -344,14 +350,88 @@ function renderOffer(r, method) {
   if (p.appraisal_gap.walkaway > 0) notes.push(`Appraisal check: a lender's appraiser works from the same kind of closed sales, so expect an appraisal near ${money(p.fair)}. Above that, the difference is cash you bring: ${money(p.appraisal_gap.walkaway)} at the walk-away price.`);
   $("#offer-out").innerHTML = `
     <div class="tiles">
-      ${tile("Opening", p.opening, "about 1 in 4 similar homes sold for less")}
+      ${tile("Opening", p.opening, list && p.opening === list ? "the list price: already below where 3 in 4 similar homes sold" : "about 1 in 4 similar homes sold for less")}
       ${tile("Target", p.target, list && p.target === list ? "the list price, which is at or below our fair value" : "our fair value: half of similar homes sold for less")}
       ${tile("Walk away above", p.walkaway, list && p.walkaway === list && list < p.range50[1] ? "the list price: no reason to pay more" : "3 in 4 similar homes sold for less")}
     </div>
     ${notes.map((n) => `<p class="explain">${esc(n)}</p>`).join("")}
     <p class="explain">These are the ends and middle of the 50% range, which held the sale price for half of past sales. None is above the list price.</p>`;
+  if ($("#builder-out")) $("#builder-out").innerHTML = state.builder ? builderOut(p, list) : "";
   $("#market-out").innerHTML = marketHtml(list);
   $("#conc-out").innerHTML = concessionsHtml(p.target);
+}
+
+// ---------- builder floor (new construction; off by default, a reference line only) ----------
+function builderHtml() {
+  const { subject, meta } = state.ctx;
+  const isNew = Comps.looksNew(subject, meta.latest_sale);
+  if (!isNew && !state.builderOwned) {
+    return `<p class="explain"><button type="button" class="link" id="b-owned">Builder-owned spec home?</button> Show a builder floor.</p>`;
+  }
+  const field = (id, label, key, ph, cls = "narrow") =>
+    `<label for="${id}">${label}</label><input id="${id}" class="${cls}" inputmode="decimal" value="${esc(offerIn[key])}" placeholder="${esc(ph)}">`;
+  return `
+    <label class="builder"><input type="checkbox" id="opt-builder" ${state.builder ? "checked" : ""}> Builder floor
+      <span class="explain">${isNew ? `(new construction: built ${esc(subject.year_built)})` : "(builder-owned)"}: the price below which the builder is unlikely to sell</span></label>
+    <div id="builder-in" ${state.builder ? "" : "hidden"}>
+      <div class="picker small">
+        ${field("b-lot", "Lot cost $", "lot", "e.g. 60000 (ask)")}
+        ${field("b-cpsf", "Build cost $/sq ft", "cpsf", "e.g. 140 (ask)", "tiny")}
+        ${field("b-margin", "Min margin %", "margin", "15", "tiny")}
+      </div>
+      <div class="picker small">
+        ${field("b-carry", "Carrying cost $/mo", "carry", "optional: interest + taxes")}
+        ${field("b-months", "Months unsold", "months", offerIn.dom ? String(Math.round(num0(offerIn.dom) / 30)) : "optional", "tiny")}
+      </div>
+      <p class="explain">We have no data on lot or build costs: get them from a local builder, an agent, or recent lot sales. The "e.g." values are placeholders, not estimates.</p>
+      <div id="builder-out"></div>
+    </div>`;
+}
+
+function bindBuilder(r, method) {
+  const owned = $("#b-owned");
+  if (owned) owned.onclick = () => { state.builderOwned = true; state.builder = true; render(); };
+  const box = $("#opt-builder");
+  if (!box) return;
+  box.onchange = () => { state.builder = box.checked; $("#builder-in").hidden = !box.checked; renderOffer(r, method); };
+  for (const [key, id] of BUILDER_FIELDS) {
+    $("#" + id).addEventListener("input", () => {
+      offerIn[key] = $("#" + id).value;
+      if (key === "margin") try { localStorage.setItem(OFFER_KEY, JSON.stringify({ ...JSON.parse(localStorage.getItem(OFFER_KEY) || "{}"), margin: offerIn.margin })); } catch { /* storage off */ }
+      renderOffer(r, method);
+    });
+  }
+}
+
+function builderOut(p, list) {
+  const s = state.ctx.subject;
+  const months = offerIn.months !== "" ? num0(offerIn.months) : (offerIn.dom ? Math.round(num0(offerIn.dom) / 30) : 0);
+  const f = Offer.builderFloor({ lot: offerIn.lot === "" ? NaN : num0(offerIn.lot), costPerSqft: num0(offerIn.cpsf), sqft: s.sqft,
+    marginPct: offerIn.margin === "" ? 15 : num0(offerIn.margin), carryMonthly: num0(offerIn.carry) || 0, carryMonths: months || 0 });
+  const out = [];
+  if (!f) out.push(`<p class="explain">Enter the lot cost and build cost per sq ft to estimate the floor.</p>`);
+  else {
+    out.push(`<p class="builder-line">Fair value ${money(p.fair)} · ${list ? `List ${money(list)} · ` : ""}<strong>Builder's estimated floor ${money(f.floor)}</strong>. Offers below this are unlikely to be accepted.</p>`);
+    out.push(`<p class="explain">Cost ${money(f.cost)} = lot ${money(f.lot)} + ${money(num0(offerIn.cpsf))}/sq ft × ${Math.round(s.sqft).toLocaleString()} heated sq ft (${money(f.build)})` +
+      (f.carry ? ` + carrying ${money(num0(offerIn.carry))}/mo × ${months} months (${money(f.carry)})` : "") +
+      `; floor = cost × ${(1 + f.margin_pct / 100).toFixed(2)} (${f.margin_pct}% minimum margin; builders typically aim for 15–20%). It's a reference line: it doesn't change the comps, fair value or offer prices above.</p>`);
+    const msgs = [];
+    if (p.fair < f.floor) msgs.push(`Fair value from the comps is below the builder's floor, so the builder likely can't go that low. The deal may hinge on concessions (rate buydown, closing costs) rather than price: see "Seller credit or price cut?" below.`);
+    if (list && list >= f.floor && list <= f.floor * 1.03) msgs.push(`The list price is within 3% of the floor: the builder is probably already close to their minimum.`);
+    if (list && list < f.floor) msgs.push(`The list price is below this floor estimate: either the builder's costs are lower than entered, or they're under pressure to sell.`);
+    if (p.opening < f.floor && p.fair >= f.floor) msgs.push(`The opening offer (${money(p.opening)}) is below the floor; expect a counter near ${money(f.floor)} or an offer of incentives instead.`);
+    out.push(...msgs.map((m) => `<p class="explain">${esc(m)}</p>`));
+    if (f.carry) out.push(`<p class="explain">Unsold inventory costs the builder every month, which is why their margin tends to shrink the longer a home sits.</p>`);
+  }
+  // What the recorded sales say about builders in this community (context, measured).
+  const low = Comps.builderClosingsLow(s, state.ctx.sales, state.ctx.meta.latest_sale);
+  const chk = state.ctx.meta.summary && state.ctx.meta.summary.builder_floor_check;
+  if (low) {
+    out.push(`<p class="explain">From recorded sales: the last ${low.n} builder closings in this subdivision (6 months) went as low as $${low.ppsf.toFixed(0)}/sq ft
+      (${esc(low.lowest.address)}, ${money(low.lowest.price)} on ${esc(low.lowest.date)}), which is ${money(low.value)} at this size.` +
+      (chk && chk.n ? ` Across ${chk.n.toLocaleString()} Pasco builder closings since ${esc(chk.sales_from)}, ${Math.round(chk.at_or_above_pct)}% came in at or above the low set by earlier ones in their community.` : "") + `</p>`);
+  }
+  return out.join("");
 }
 
 function marketHtml(list) {

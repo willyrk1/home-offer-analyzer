@@ -163,6 +163,18 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
   editable rate cut per point) vs price cut, with buydown's price-cut equivalent. Optional
   days on market vs Realtor.com ZIP listing DOM is a qualitative note only (not measurable
   from county data).
+- **Builder floor** (`Offer.builderFloor`, per the spec): only for new construction (built
+  this year or last, as of the latest sale) or when the user marks a home builder-owned;
+  checkbox off by default, and nothing about the floor shows when off. floor = (lot +
+  build $/sf × heated sf [+ carrying $/mo × months unsold]) × (1 + min margin, default 15%).
+  Lot and build cost are user-entered; no data source, so placeholders are labeled "e.g."
+  and never used as values. A reference line only: never changes comps, fair value or
+  offer prices. Says plainly when fair value < floor (deal hinges on concessions) or list
+  is within 3% of it. Context from recorded sales (`pipeline/builder.py`, both engines):
+  lowest builder $/sf in the subdivision over 6 months (≥3 closings) × subject sf; 85% of
+  1,057 Pasco builder closings came in at or above that level set by earlier ones (resales
+  vs the same kind of level: 82%), so it's soft. Spec example (220 Hollow Rd, Cleveland TN):
+  $60K + 2,314 sf × $140 = $384K × 1.15 = $442K.
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.
@@ -190,8 +202,7 @@ leverage.
 3. ~~County regression, comps, show-the-math, why-not-this-comp~~
 4. ~~Backtest + offer recommendation~~ — backtest, tuning (no gain), assessed/blend
    methods, calibrated ranges, measured (null) market leverage, offer + appraisal check +
-   concessions converter. Still open: builder-floor toggle for new builds; Redfin
-   "recently sold" CSV upload (step 2).
+   concessions converter. Still open: Redfin "recently sold" CSV upload (step 2).
 5. Own ZIP forecast model (leading indicators, trained 2012–present incl. 2022–23),
    backtest vs Zillow using `data/archive/`, accuracy-weighted blend, show as a range.
    Also: FAU-style "above long-term trend %" per ZIP (Bill asked; show trend start date).

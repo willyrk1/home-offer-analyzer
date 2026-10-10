@@ -178,3 +178,8 @@ table.comps th, table.comps td { padding: 8px 7px; }
 .picker.small label { font-weight: 600; }
 input.tiny { width: 72px; }
 .acc .src { color: var(--muted); font-size: 12px; font-weight: 400; white-space: normal; }
+
+.offer label.builder { display: block; margin: 0 0 8px; font-weight: 600; }
+.offer label.builder .explain { font-weight: 400; }
+
+.offer .builder-line { margin: 4px 0 6px; }

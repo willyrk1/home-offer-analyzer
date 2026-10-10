@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from . import site_export, valuation
+from . import builder, site_export, valuation
 from .build import _clean
 from .counties import pasco
 
@@ -58,6 +58,7 @@ def build_county(name: str, raw_dir: Path, work_dir: Path, site_dir: Path,
         "latest_sale": sales["date"].max().strftime("%Y-%m-%d") if not sales.empty else None,
         "market_sales_last_90_days": int(((sales["sale_class"] == "market")
                                           & (sales["date"] > sales["date"].max() - pd.Timedelta(days=90))).sum()),
+        "builder_floor_check": builder.check(sales),
     }
     (out / "summary.json").write_text(json.dumps(_clean(summary), indent=1))
 

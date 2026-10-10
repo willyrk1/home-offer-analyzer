@@ -38,6 +38,18 @@
     return { opening, target, walkaway, notes, appraisal_gap: { target: gap(target), walkaway: gap(walkaway) } };
   }
 
+  /** Builder's estimated floor for a new home they own: their cost plus a minimum margin.
+        cost  = lot + build cost per sq ft x heated sq ft (+ months unsold x monthly carrying cost)
+        floor = cost x (1 + margin)
+      A reference line only: it never changes comps, fair value or the offer prices.
+      Returns null until lot, build cost and sq ft are entered. */
+  function builderFloor({ lot, costPerSqft, sqft, marginPct = 15, carryMonthly = 0, carryMonths = 0 }) {
+    if (!(lot >= 0) || !(costPerSqft > 0) || !(sqft > 0)) return null;
+    const build = costPerSqft * sqft, carry = (carryMonthly > 0 && carryMonths > 0) ? carryMonthly * carryMonths : 0;
+    const cost = lot + build + carry;
+    return { lot, build, carry, cost, margin_pct: marginPct, floor: cost * (1 + marginPct / 100) };
+  }
+
   /** Monthly principal and interest. rate in % per year. */
   function payment(loan, ratePct, years = 30) {
     const r = ratePct / 100 / 12, n = years * 12;
@@ -63,7 +75,7 @@
     };
   }
 
-  const api = { plan, payment, concessions };
+  const api = { plan, payment, concessions, builderFloor };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Offer = api;
 })(typeof window !== "undefined" ? window : globalThis);

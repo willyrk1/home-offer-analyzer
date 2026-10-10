@@ -41,3 +41,15 @@ def test_concessions_math():
     # Price-cut equivalent of the buydown gives the same monthly saving as that price cut would.
     per = expected / 360800
     assert c["buydown"]["price_cut_equivalent"] * 0.8 * per == pytest.approx(c["buydown"]["monthly_saving"])
+
+
+def test_builder_floor_is_cost_plus_margin():
+    # The spec's example: $60K lot + 2,314 sq ft x $140 = $383,960; x 1.15 = $441,554.
+    f = js("O.builderFloor({lot: 60000, costPerSqft: 140, sqft: 2314})")
+    assert f["cost"] == pytest.approx(383960) and f["floor"] == pytest.approx(441554)
+    carry = js("O.builderFloor({lot: 60000, costPerSqft: 140, sqft: 2314, marginPct: 18, carryMonthly: 2500, carryMonths: 4})")
+    assert carry["carry"] == 10000 and carry["floor"] == pytest.approx(393960 * 1.18)
+    assert js("O.builderFloor({lot: 60000, costPerSqft: 0, sqft: 2314})") is None     # nothing invented
+    assert js("O.builderFloor({lot: NaN, costPerSqft: 140, sqft: 2314})") is None
+    # The offer prices never depend on it.
+    assert js("O.plan(451101, [424284, 479613], 485000)")["opening"] == 424000

@@ -143,3 +143,36 @@ def test_calibrated_range_matches_python():
                                      json.dumps(cases)], capture_output=True, text=True, check=True).stdout)
     for js, args in zip(out, cases):
         assert js == pytest.approx(comps.calibrated_range(*args[:4], cal, args[4]), rel=1e-12)
+
+
+def test_builder_closings_low_matches_python(built):
+    from pipeline import builder
+    tmp, site = built
+    sales = pd.read_parquet(tmp / "work" / "sales.parquet")
+    parcels = pd.read_parquet(tmp / "work" / "parcels.parquet")
+    meta = json.loads((site / "counties" / "pasco" / "meta.json").read_text())
+    # The fixture's builder sales are 2024-25 (inside the exported 24 months), so value as of then.
+    as_of = pd.Timestamp("2025-03-31")
+    assert meta["summary"]["builder_floor_check"]["n"] > 0
+    b = builder.builder_sales(sales)
+    has = parcels.apply(lambda s: builder.closings_low(s, b, as_of) is not None, axis=1)
+    subjects = pd.concat([parcels[has].head(3), parcels[~has].head(1)])
+    rows = []
+    for z in ["33543", "33544"]:
+        t = json.loads((site / "counties" / "pasco" / "sales" / f"{z}.json").read_text())
+        rows += [dict(zip(t["cols"], r)) for r in t["rows"]]
+    script = ("const C=require(process.argv[1]);"
+              "const [subs,sales,asOf]=JSON.parse(require('fs').readFileSync(0,'utf8'));"
+              "console.log(JSON.stringify(subs.map(s=>C.builderClosingsLow(s,sales,asOf))));")
+    subs = [{k: (None if pd.isna(v) else v) for k, v in s.items()} for s in subjects.to_dict("records")]
+    stdin = json.dumps([subs, rows, "2025-03-31"], default=float)   # too long for a command line
+    out = json.loads(subprocess.run(["node", "-e", script, str(ROOT / "site" / "comps.js")], input=stdin,
+                                    capture_output=True, text=True, check=True).stdout)
+    found = 0
+    for js, (_, s) in zip(out, subjects.iterrows()):
+        py = builder.closings_low(s, b, as_of)
+        assert (js is None) == (py is None)
+        if py:
+            found += 1
+            assert js["value"] == pytest.approx(py["value"], rel=1e-9) and js["n"] == py["n"]
+    assert found >= 1

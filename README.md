@@ -52,6 +52,7 @@ python -m pipeline.build --raw-dir raw-sample --offline
 # Pasco comps data (downloads ~800 MB the first time; reuse with --offline --raw-dir raw/pasco)
 python -m pipeline.county_build
 python -m pipeline.comps_report "1295 Montgomery Bell Rd, Wesley Chapel, FL 33543"
+python -m pipeline.backtest   # accuracy on the last 12 months of sales, no look-ahead
 
 # Serve the site
 python -m http.server -d site 8000   # then open http://localhost:8000

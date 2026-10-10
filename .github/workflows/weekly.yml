@@ -49,6 +49,11 @@ jobs:
         continue-on-error: true
         run: python -u -m pipeline.county_build --county pasco
 
+      - name: Pasco backtest (accuracy shown on the value page)
+        # Values the last 12 months of sales as of the day before each; ~10-15 min.
+        continue-on-error: true
+        run: python -u -m pipeline.backtest --county pasco
+
       - name: Commit new forecast archive (also keeps the schedule active)
         run: |
           git config user.name "github-actions[bot]"

@@ -7,6 +7,9 @@
   const MIN_COMPS = 6, MAX_COMPS = 8;
   const SEARCH = [[0.5, 6], [1.0, 6], [1.0, 9], [2.0, 9], [2.0, 12], [3.0, 12], [5.0, 18]];
   const DISTRESSED_WEIGHT = 0.5, NET_LIMIT = 15, GROSS_LIMIT = 25, SIZE_LIMIT = 0.35;
+  // Similarity penalty per unit of difference; same table as SIM in pipeline/comps.py.
+  const SIM = { size: 1.0, age: 0.6, lot: 0.3, baths: 0.4, pool: 1.0, dist: 0.8, months: 0.5,
+    same_nbhd: 0.3, same_subdivision: 0.4 };
   const FEATURES = ["ln_sqft", "age", "new", "ln_lot", "baths", "pool", "two_story", "quality"];
   const DAY = 86400000;
 
@@ -110,9 +113,9 @@
       dist: c.distance_mi,
       months: Math.round((asOf - parseDate(c.date)) / DAY) / 30.4 / 6,
     };
-    let penalty = 1.0 * parts.size + 0.6 * parts.age + 0.3 * parts.lot + 0.4 * parts.baths +
-      parts.pool + 0.8 * parts.dist + 0.5 * parts.months;
-    penalty -= 0.3 * (c.nbhd === subj.nbhd ? 1 : 0) + 0.4 * (c.subdivision === subj.subdivision ? 1 : 0);
+    let penalty = SIM.size * parts.size + SIM.age * parts.age + SIM.lot * parts.lot + SIM.baths * parts.baths +
+      SIM.pool * parts.pool + SIM.dist * parts.dist + SIM.months * parts.months;
+    penalty -= SIM.same_nbhd * (c.nbhd === subj.nbhd ? 1 : 0) + SIM.same_subdivision * (c.subdivision === subj.subdivision ? 1 : 0);
     return { score: 1 / (1 + Math.max(penalty, 0)), parts };
   }
 
@@ -145,6 +148,7 @@
       if (s.property_type !== subject.property_type) continue;
       if (!classes.includes(s.sale_class)) continue;
       if (s.parcel_id === subject.parcel_id || excluded.has(s.parcel_id)) continue;
+      if (opts.asOf && s.date > opts.asOf) continue;    // no-op live; matters in backtests
       const prev = latest.get(s.parcel_id);
       if (!prev || s.date >= prev.date) latest.set(s.parcel_id, s);
     }
@@ -285,7 +289,7 @@
     };
   }
 
-  const api = { MIN_COMPS, MAX_COMPS, FEATURES, normalizeAddress, parseAddress, candidateZips, fromTable, design,
+  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, normalizeAddress, parseAddress, candidateZips, fromTable, design,
     timeFactor, valueSubject, explain, haversine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Comps = api;

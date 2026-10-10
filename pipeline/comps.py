@@ -23,6 +23,9 @@ SEARCH = [  # (radius in miles, months back)
 ]
 DISTRESSED_WEIGHT = 0.5
 NET_LIMIT, GROSS_LIMIT = 0.15, 0.25
+# Similarity penalty per unit of difference (see _similarity); site/comps.js has the same table.
+SIM = {"size": 1.0, "age": 0.6, "lot": 0.3, "baths": 0.4, "pool": 1.0, "dist": 0.8, "months": 0.5,
+       "same_nbhd": 0.3, "same_subdivision": 0.4}
 
 
 def haversine_miles(lat1, lon1, lat2, lon2):
@@ -62,6 +65,11 @@ class TimeIndex:
         latest_month, latest_val = self.latest[zip_code]
         return latest_val / then, f"{month} -> {latest_month}"
 
+    def through(self, last_month: str) -> "TimeIndex":
+        """The index as it stood when `last_month` (YYYY-MM) was the newest month published."""
+        return TimeIndex({z: [p for p in pts if p[0] <= last_month] for z, pts in
+                          ((z, sorted(s.items())) for z, s in self.idx.items())})
+
 
 def _f(v, default=np.nan) -> float:
     try:
@@ -92,8 +100,9 @@ def _similarity(c: pd.DataFrame, subj: pd.Series, as_of: pd.Timestamp) -> pd.Ser
     months = (as_of - c["date"]).dt.days / 30.4 / 6
     same_nb = (c["nbhd"] == subj["nbhd"]).astype(float)
     same_sub = (c["subdivision"] == subj["subdivision"]).astype(float)
-    penalty = 1.0 * size + 0.6 * age + 0.3 * lot + 0.4 * baths + pool + 0.8 * dist + 0.5 * months
-    penalty -= 0.3 * same_nb + 0.4 * same_sub
+    penalty = (SIM["size"] * size + SIM["age"] * age + SIM["lot"] * lot + SIM["baths"] * baths
+               + SIM["pool"] * pool + SIM["dist"] * dist + SIM["months"] * months)
+    penalty -= SIM["same_nbhd"] * same_nb + SIM["same_subdivision"] * same_sub
     return 1 / (1 + penalty.clip(lower=0))
 
 
@@ -127,6 +136,7 @@ def value_subject(subject: pd.Series, sales: pd.DataFrame, model: dict, tindex: 
     pool = sales[sales["property_type"] == subject["property_type"]]
     if exclude_parcel:
         pool = pool[pool["parcel_id"] != subject["parcel_id"]]
+    pool = pool[pool["date"] <= as_of]   # no-op live (as_of = latest sale); matters in backtests
     # Most recent sale per parcel only.
     pool = pool.sort_values("date").drop_duplicates("parcel_id", keep="last")
     located = pd.notna(subject.get("lat")) and pool["lat"].notna().any()

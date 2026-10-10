@@ -37,8 +37,12 @@ def design(df: pd.DataFrame, as_of_year: float | None = None) -> pd.DataFrame:
     }, index=df.index)
 
 
-def fit(sales: pd.DataFrame, months: int = 24, min_group: int = 15) -> dict:
-    """Fit on market sales from the last `months` months. Returns coefficients and fit stats."""
+def fit(sales: pd.DataFrame, months: int = 24, min_group: int = 15, effects: bool = False) -> dict:
+    """Fit on market sales from the last `months` months. Returns coefficients and fit stats.
+
+    effects=True also returns the intercept and the neighborhood, month and property-type
+    effects, so `predict` can value a home from the regression alone (a backtest baseline).
+    """
     if sales.empty:
         raise ValueError("no sales to fit")
     end = sales["date"].max()
@@ -74,7 +78,7 @@ def fit(sales: pd.DataFrame, months: int = 24, min_group: int = 15) -> dict:
 
     feats = {f: {"coef": float(coef[i + 1]), "se": float(se[i + 1]), "label": LABELS[f]}
              for i, f in enumerate(FEATURES)}
-    return {
+    out = {
         "features": feats,
         "n_sales": int(len(df)),
         "n_neighborhoods": int(nb.nunique()),
@@ -83,3 +87,25 @@ def fit(sales: pd.DataFrame, months: int = 24, min_group: int = 15) -> dict:
         "rmse_log": float(np.sqrt((resid ** 2).mean())),
         "median_abs_pct_error": float(np.median(np.abs(np.expm1(resid))) * 100),
     }
+    if effects:
+        named = dict(zip(dummies.columns, coef[1 + len(FEATURES):]))
+        groups = {k[3:]: float(v) for k, v in named.items() if k.startswith("nb_")}
+        out["effects"] = {
+            "intercept": float(coef[0]),
+            "nbhd": groups, "nbhd_kept": sorted(set(nb)),
+            "type": {k[3:]: float(v) for k, v in named.items() if k.startswith("pt_")},
+            "last_month": float(named.get(f"m_{month.max()}", 0.0)),
+        }
+    return out
+
+
+def predict(model: dict, subject: pd.DataFrame, as_of_year: float) -> float:
+    """Regression-only value for one home (`subject`: one row with features, nbhd, property_type),
+    at the price level of the model's last month. Needs a model fitted with effects=True."""
+    e = model["effects"]
+    x = design(subject, as_of_year=as_of_year).iloc[0]
+    nb = subject["nbhd"].iat[0]
+    nb = nb if nb in e["nbhd_kept"] else "other"
+    ln = (e["intercept"] + sum(model["features"][f]["coef"] * x[f] for f in FEATURES)
+          + e["nbhd"].get(nb, 0.0) + e["type"].get(subject["property_type"].iat[0], 0.0) + e["last_month"])
+    return float(np.exp(ln))

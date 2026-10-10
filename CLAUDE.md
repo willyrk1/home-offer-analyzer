@@ -36,12 +36,13 @@ snapshots for future backtests) is committed by the workflow and can't be recrea
 
 ```bash
 pip install -r requirements.txt          # geopandas/pyogrio needed for the parcel map
-python -m pytest -q                      # 30 tests; JS parity tests need node
+python -m pytest -q                      # 33 tests; JS parity tests need node
 python -m pipeline.build                 # market data (downloads ~few hundred MB)
 python -m pipeline.county_build          # Pasco (downloads ~800 MB incl. 684 MB map; ~10 min)
 python -m pipeline.county_build --offline --raw-dir raw/pasco   # reuse downloads
 python -m pipeline.comps_report "1295 Montgomery Bell Rd, Wesley Chapel, FL 33543"
 node tests/run_comps.js site/data pasco "<address>"            # browser engine, same data
+python -m pipeline.backtest [--sample 500]   # value last 12 months of sales as of the day before each
 python -m http.server -d site 8000       # preview
 # sample data, no downloads:
 python -m tests.fixtures raw-sample && python -m pipeline.build --raw-dir raw-sample --offline

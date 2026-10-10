@@ -4,7 +4,13 @@ const COUNTY = "pasco";
 const BASE = `data/counties/${COUNTY}/`;
 const $ = (s) => document.querySelector(s);
 const cache = new Map();
-const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, explain: null };
+const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, explain: null, method: null };
+const METHOD_NAMES = { comps: "Adjusted comps", assessed: "Appraiser ratio", blend: "Blend of both" };
+const METHOD_DESC = {
+  comps: "nearby sales, each adjusted for every difference from this house",
+  assessed: "this house's appraiser value × what the comps sold for compared with theirs",
+  blend: "the average of the two",
+};
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const money = (v) => v == null ? "—" : "$" + Math.round(v).toLocaleString("en-US");
@@ -92,7 +98,11 @@ function render() {
   const box = $("#result");
   box.hidden = false;
 
-  const vsList = list && r.fair_value ? (list / r.fair_value - 1) * 100 : null;
+  const method = chosenMethod(r);
+  const m = r.methods[method];
+  const fair = m.fair_value, range = m.range;
+  const vsList = list && fair ? (list / fair - 1) * 100 : null;
+  state.ctx.lastAssessedUsed = r.methods.assessed.used || null;
   const searchText = `${r.comps.filter((c) => !c.forced).length} comps ${esc(r.search.area)}, sold in the last ${r.search.months} months` +
     (r.search.located ? "" : " (no map location, matched by area)") + (r.search.thin ? " — few sales nearby, so the search had to reach far" : "");
 
@@ -102,18 +112,19 @@ function render() {
         <div><h2>${esc(s.address)}</h2><span class="place">${esc(s.city)} ${esc(s.zip)} · parcel ${esc(s.parcel_id)} · ${esc(s.nbhd_name || s.nbhd)}</span></div>
       </div>
       <div class="tiles">
-        <div class="tile hero"><div class="label">Fair value</div><div class="value">${money(r.fair_value)}</div>
-          <div class="note">range ${r.range ? money(r.range[0]) + " – " + money(r.range[1]) : "—"}${rangeOdds()}</div></div>
+        <div class="tile hero"><div class="label">Fair value · ${esc(METHOD_NAMES[method].toLowerCase())}</div><div class="value">${money(fair)}</div>
+          <div class="note">range ${range ? money(range[0]) + " – " + money(range[1]) : "—"}${rangeOdds(method)}</div></div>
         ${list ? `<div class="tile"><div class="label">List price</div><div class="value ${vsList > 0 ? "up-seller" : "up-buyer"}">${money(list)}</div>
-          <div class="note">${pct(vsList)} vs fair value${r.range && list > r.range[1] ? " · above the range" : r.range && list < r.range[0] ? " · below the range" : ""}</div></div>` : ""}
+          <div class="note">${pct(vsList)} vs fair value${range && list > range[1] ? " · above the range" : range && list < range[0] ? " · below the range" : ""}</div></div>` : ""}
         <div class="tile"><div class="label">The house</div><div class="value small">${Math.round(s.sqft).toLocaleString()} sq ft</div>
           <div class="note">${esc(type(s.property_type))}, built ${s.year_built}, ${s.baths ?? "—"} baths, ${s.stories >= 2 ? "two-story" : "one-story"}, lot ${s.lot_acres ?? "—"} ac, ${s.pool ? "pool" : "no pool"}</div></div>
         <div class="tile"><div class="label">Appraiser's just value</div><div class="value small">${money(s.just_value)}</div>
           <div class="note">for tax purposes; usually below market</div></div>
       </div>
-      <p class="explain">${searchText}. Each sale is brought to today's prices with the ZIP's home value index, then adjusted for every difference using values fitted on Pasco sales. Closer matches and smaller adjustments count more.</p>
+      ${methodPicker(r, method)}
+      <p class="explain">${searchText}. Each sale is brought to today's prices with the ZIP's home value index, then adjusted for every difference using values fitted on Pasco sales. Closer matches and smaller adjustments count more.${assessedText(r, method)}</p>
 
-      ${accuracyHtml(r)}
+      ${accuracyHtml(r, method)}
 
       <div class="controls">
         <label><input type="checkbox" id="opt-distressed" ${state.opts.includeDistressed ? "checked" : ""}> Include distressed sales (bank-owned, short sales) at half weight</label>
@@ -139,6 +150,7 @@ function render() {
       <div id="why-out">${state.explain ? explainHtml(state.explain, r) : ""}</div>
     </div>`;
 
+  box.querySelectorAll("input[name=method]").forEach((el) => el.onchange = () => { state.method = el.value; render(); });
   $("#opt-distressed").onchange = (e) => { state.opts.includeDistressed = e.target.checked; render(); };
   $("#opt-math").onchange = (e) => { state.showMath = e.target.checked; render(); };
   box.querySelectorAll("[data-toggle]").forEach((b) => b.onclick = () => {
@@ -163,18 +175,58 @@ function render() {
   };
 }
 
-// ---------- how accurate is this? (backtest.json from pipeline/backtest.py) ----------
-function rangeOdds() {
+// ---------- valuation method (comps, assessed, blend: see pipeline/comps.py) ----------
+/** Backtest results for a method: {view: {overall, by}, from, to} or null. */
+function methodStats(method) {
   const bt = state.ctx.backtest;
-  if (!bt || !bt.overall.valued) return "";
-  return `<br>about ${Math.round(bt.overall.in_range_pct / 10)} in 10 past sales landed in their range`;
+  if (!bt) return null;
+  const bm = bt.methods && bt.methods.by_method && bt.methods.by_method[method];
+  if (bm && bm.overall.valued) return { view: bm, from: bt.methods.sales_from, to: bt.sales_to };
+  if (method === "comps" && bt.overall.valued) return { view: bt, from: bt.sales_from, to: bt.sales_to };
+  return null;
+}
+const bestMethod = () => (state.ctx.backtest && state.ctx.backtest.methods && state.ctx.backtest.methods.best) || "comps";
+
+/** The method you picked, else the backtest's most accurate, else comps (when a method can't value this home). */
+function chosenMethod(r) {
+  for (const m of [state.method, bestMethod(), "comps"]) if (m && r.methods[m] && r.methods[m].fair_value != null) return m;
+  return "comps";
 }
 
-function accuracyHtml(r) {
-  const bt = state.ctx.backtest;
-  if (!bt || !bt.overall.valued) return "";
+function methodPicker(r, method) {
+  const best = bestMethod();
+  const opts = Comps.METHODS.map((k) => {
+    const v = r.methods[k], st = methodStats(k), ok = v.fair_value != null;
+    const acc = st ? `typical miss ${st.view.overall.median_abs_error_pct.toFixed(1)}% in the backtest` : "not backtested yet";
+    return `<label class="method ${ok ? "" : "off"}"><input type="radio" name="method" value="${k}" ${k === method ? "checked" : ""} ${ok ? "" : "disabled"}>
+      <span class="m-name">${esc(METHOD_NAMES[k])}${k === best ? ' <span class="tag-sm">most accurate</span>' : ""}</span>
+      <span class="m-value">${ok ? money(v.fair_value) : "n/a"}</span>
+      <span class="m-note">${esc(ok ? METHOD_DESC[k] : v.reason || "not available for this home")} · ${esc(acc)}</span></label>`;
+  }).join("");
+  return `<fieldset class="methods"><legend>Method</legend>${opts}</fieldset>`;
+}
+
+function assessedText(r, method) {
+  const a = r.methods.assessed;
+  if (method === "comps" || a.fair_value == null) return "";
+  return ` <strong>Appraiser ratio:</strong> after the time adjustment, the comps sold for ${a.ratio.toFixed(3)}× their appraiser
+    just values on average (weighted by similarity), so ${money(a.just_value)} × ${a.ratio.toFixed(3)} = ${money(a.fair_value)}.
+    The appraiser's value already reflects size, age, lot and location, so no feature adjustments are applied.`;
+}
+
+// ---------- how accurate is this? (backtest.json from pipeline/backtest.py) ----------
+function rangeOdds(method) {
+  const st = methodStats(method);
+  if (!st) return "";
+  return `<br>about ${Math.round(st.view.overall.in_range_pct / 10)} in 10 past sales landed in their range`;
+}
+
+function accuracyHtml(r, method) {
+  const stats = methodStats(method);
+  if (!stats) return "";
+  const bt = { ...state.ctx.backtest, ...stats.view, sales_from: stats.from };
   const s = state.ctx.subject;
-  const fv = r.fair_value;
+  const fv = r.methods[method].fair_value;
   const band = fv == null ? null : bt.price_bands.find(([lo, hi]) => fv >= lo && (hi == null || fv < hi));
   const rows = [["All Pasco sales", bt.overall],
     [`ZIP ${s.zip}`, bt.by.zip[s.zip]],
@@ -189,7 +241,7 @@ function accuracyHtml(r) {
   const fmtDate = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
   return `
     <details class="accuracy">
-      <summary><h3>How accurate is this?</h3> <span>typical miss ${bt.overall.median_abs_error_pct.toFixed(0)}% county-wide${zipRow && zipRow.valued ? `, ${zipRow.median_abs_error_pct.toFixed(0)}% in ${esc(s.zip)}` : ""}</span></summary>
+      <summary><h3>How accurate is this?</h3> <span>${esc(METHOD_NAMES[method])}:</span> <span>typical miss ${bt.overall.median_abs_error_pct.toFixed(0)}% county-wide${zipRow && zipRow.valued ? `, ${zipRow.median_abs_error_pct.toFixed(0)}% in ${esc(s.zip)}` : ""}</span></summary>
       <p class="explain">We valued ${bt.overall.valued.toLocaleString()} Pasco market sales (${fmtDate(bt.sales_from)} – ${fmtDate(bt.sales_to)}) the same way,
         each as of the day before it sold and using only sales and prices known then, and compared with what they sold for.</p>
       <div class="table-scroll"><table class="acc">
@@ -200,6 +252,7 @@ function accuracyHtml(r) {
       </table></div>
       ${warn}
       <p class="explain">Typical miss = median gap between our value and the sale price; half of sales missed by less. Lean = whether we tend to come in high or low.
+        ${stats.from !== state.ctx.backtest.sales_from ? `Methods are compared on sales since ${fmtDate(stats.from)}, after the appraiser's January 1 values were set, so the appraiser's figure never saw the sale it's tested on.` : ""}
         ${bt.overall.regression_only ? `The county model alone, without comps, missed by ${bt.overall.regression_only.median_abs_error_pct.toFixed(1)}%.` : ""}
         Source: Pasco County Property Appraiser recorded sales, backtest run on sales through ${esc(bt.sales_to)}.</p>
     </details>`;
@@ -217,6 +270,9 @@ function compRow(c, i) {
       <table class="mathtable">
         <tr><td>Sale price (${esc(c.date)}, ${esc(c.sale_class)})</td><td></td><td class="num">${money(c.price)}</td></tr>
         <tr><td>Time: ZIP ${esc(c.zip)} index ${esc(c.time_note)}</td><td class="num">×${c.time_factor.toFixed(3)}</td><td class="num">${money(c.time_adjusted)}</td></tr>
+        ${c.just_value ? `<tr><td>Appraiser ratio: ${money(c.time_adjusted)} ÷ appraiser value ${money(c.just_value)}${
+          state.ctx.lastAssessedUsed && !state.ctx.lastAssessedUsed.includes(c.parcel_id) ? " (not used: far from the other comps' ratios)" : ""}</td>
+          <td class="num">${(c.time_adjusted / c.just_value).toFixed(3)}</td><td></td></tr>` : ""}
         ${c.adjustments.map((a) => `<tr><td>${esc(a.label)}: ${describeDiff(a, c)}</td>
           <td class="num">${pct(a.pct)}</td><td class="num">${a.dollars >= 0 ? "+" : "−"}${money(Math.abs(a.dollars))}</td></tr>`).join("")}
         <tr class="total"><td>Adjusted price (net ${pct(c.net_pct)}, gross ${c.gross_pct.toFixed(1)}%)</td><td></td><td class="num">${money(c.adjusted_price)}</td></tr>

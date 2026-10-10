@@ -158,3 +158,12 @@ table.comps th, table.comps td { padding: 8px 7px; }
 .accuracy .acc th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .accuracy .acc .num { text-align: right; white-space: nowrap; }
 .explain.warn { color: var(--seller); }
+
+.methods { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 10px; margin: 0 0 14px; display: grid; gap: 6px; }
+.methods legend { font-weight: 600; padding: 0 4px; }
+.methods .method { display: grid; grid-template-columns: auto 1fr auto; gap: 0 10px; align-items: baseline; cursor: pointer; }
+.methods .method input { grid-row: 1 / span 2; align-self: center; }
+.methods .m-name { font-weight: 600; }
+.methods .m-value { font-weight: 650; text-align: right; }
+.methods .m-note { grid-column: 2 / span 2; font-size: 13px; color: var(--muted); }
+.methods .method.off { opacity: 0.55; cursor: default; }

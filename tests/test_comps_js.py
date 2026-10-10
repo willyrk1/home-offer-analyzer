@@ -52,6 +52,13 @@ def test_js_matches_python(built, address):
     assert js["search"]["area"] == py["search"]["area"] or "mi" in js["search"]["area"]
     assert [c["parcel_id"] for c in js["comps"]] == [c["parcel_id"] for c in py["comps"]]
     assert js["fair_value"] == pytest.approx(py["fair_value"], rel=1e-9)
+    for m, v in py["methods"].items():
+        if v["fair_value"] is None:
+            assert js["methods"][m]["fair_value"] is None
+        else:
+            assert js["methods"][m]["fair_value"] == pytest.approx(v["fair_value"], rel=1e-9)
+            assert js["methods"][m]["range"] == pytest.approx(v["range"], rel=1e-9)
+    assert py["methods"]["assessed"]["fair_value"] is not None   # fixture has just values
     for a, b in zip(js["comps"], py["comps"]):
         assert a["adjusted_price"] == pytest.approx(b["adjusted_price"], rel=1e-9)
         assert a["weight"] == pytest.approx(b["weight"], rel=1e-9)

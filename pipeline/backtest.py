@@ -138,6 +138,9 @@ def run(parcels: pd.DataFrame, sales: pd.DataFrame, tindex: comps.TimeIndex, mon
                     "new_build": bool(pd.notna(sale["year_built"]) and sale["date"].year - sale["year_built"] <= 1),
                     "fair_value": fair, "regression_value": regression,
                     "low": r["range"][0] if fair else None, "high": r["range"][1] if fair else None,
+                    **{f"{m}_{k}": (v["fair_value"] if k == "value" else v["range"][0 if k == "low" else 1])
+                       if v["fair_value"] is not None else None
+                       for m, v in r["methods"].items() for k in ("value", "low", "high")},
                     "n_comps": len(r["comps"]), "search_area": r["search"]["area"],
                     "search_months": r["search"]["months"], "thin": bool(r["search"].get("thin", False)),
                     "index_month": t_month,
@@ -151,14 +154,22 @@ def run(parcels: pd.DataFrame, sales: pd.DataFrame, tindex: comps.TimeIndex, mon
     out["error_pct"] = (out["fair_value"] / out["price"] - 1) * 100
     out["regression_error_pct"] = (out["regression_value"] / out["price"] - 1) * 100
     out["in_range"] = (out["price"] >= out["low"]) & (out["price"] <= out["high"])
+    for m in comps.METHODS:
+        v = pd.to_numeric(out[f"{m}_value"])
+        out[f"{m}_error_pct"] = (v / out["price"] - 1) * 100
+        out[f"{m}_in_range"] = (out["price"] >= pd.to_numeric(out[f"{m}_low"])) & (out["price"] <= pd.to_numeric(out[f"{m}_high"]))
     out["price_band"] = out["price"].map(_band)
     return out
 
 
-def summarize(df: pd.DataFrame) -> dict:
-    """Accuracy stats for a set of backtest rows (those that got a value)."""
-    v = df[df["fair_value"].notna()]
-    e = v["error_pct"]
+def summarize(df: pd.DataFrame, method: str = "comps") -> dict:
+    """Accuracy stats for a set of backtest rows (those that got a value by `method`)."""
+    if f"{method}_value" not in df:            # results saved before methods existed
+        if method != "comps":
+            return {"n": int(len(df)), "valued": 0}
+        df = df.assign(comps_value=df["fair_value"], comps_error_pct=df["error_pct"], comps_in_range=df["in_range"])
+    v = df[pd.to_numeric(df[f"{method}_value"]).notna()]
+    e = v[f"{method}_error_pct"]
     if v.empty:
         return {"n": int(len(df)), "valued": 0}
     return {
@@ -168,7 +179,7 @@ def summarize(df: pd.DataFrame) -> dict:
         "within_5_pct": float((e.abs() <= 5).mean() * 100),
         "within_10_pct": float((e.abs() <= 10).mean() * 100),
         "within_20_pct": float((e.abs() <= 20).mean() * 100),
-        "in_range_pct": float(v["in_range"].mean() * 100),
+        "in_range_pct": float(v[f"{method}_in_range"].mean() * 100),
         "thin_pct": float(v["thin"].mean() * 100),
         # The county regression alone, same sales, same no-look-ahead rules: what the comps add.
         "regression_only": {
@@ -179,17 +190,33 @@ def summarize(df: pd.DataFrame) -> dict:
     }
 
 
-def report(df: pd.DataFrame, min_n: int = 30) -> dict:
+def _report(df: pd.DataFrame, method: str, min_n: int) -> dict:
     groups = {}
     for col in ["property_type", "price_band", "zip", "new_build", "search_area"]:
-        g = {str(k): summarize(sub) for k, sub in df.groupby(col)}
+        g = {str(k): summarize(sub, method) for k, sub in df.groupby(col)}
         groups[col] = {k: s for k, s in g.items() if s["n"] >= min_n}
+    return {"overall": summarize(df, method), "by": groups}
+
+
+def report(df: pd.DataFrame, min_n: int = 30) -> dict:
+    """Comps method on every sale, plus all methods compared on sales since January 1 of the
+    latest year: appraiser just values are set as of January 1 from earlier sales, so only
+    later sales are a fair test of the assessed and blend methods."""
+    roll_start = pd.Timestamp(year=df["sale_date"].max().year, month=1, day=1)
+    fair = df[df["sale_date"] >= roll_start]
+    by_method = {m: _report(fair, m, min_n) for m in comps.METHODS}
+    # A method must value nearly every sale to be the default (assessed skips some homes).
+    scored = {m: r["overall"]["median_abs_error_pct"] for m, r in by_method.items()
+              if r["overall"].get("valued", 0) >= 0.9 * max(len(fair), 1)}
+    main = _report(df, "comps", min_n)
     return {
-        "overall": summarize(df),
+        "overall": main["overall"],
         "sales_from": df["sale_date"].min().strftime("%Y-%m-%d"),
         "sales_to": df["sale_date"].max().strftime("%Y-%m-%d"),
         "price_bands": [[lo, None if hi == math.inf else hi, _band(lo)] for lo, hi in zip(PRICE_BANDS, PRICE_BANDS[1:])],
-        "by": groups,
+        "by": main["by"],
+        "methods": {"sales_from": roll_start.strftime("%Y-%m-%d"), "n": int(len(fair)),
+                    "best": min(scored, key=scored.get) if scored else "comps", "by_method": by_method},
     }
 
 
@@ -206,6 +233,14 @@ def render(rep: dict) -> str:
            line("ALL", rep["overall"])]
     for col, g in rep["by"].items():
         out += ["", f"by {col}"] + [line(k, s) for k, s in sorted(g.items(), key=lambda kv: -kv[1]["n"])]
+    m = rep.get("methods")
+    if m:
+        out += ["", f"METHODS  sales since {m['sales_from']} (after the appraiser's January 1 values); "
+                    f"default: {m['best']}"]
+        for name, r in m["by_method"].items():
+            out.append(line(name, r["overall"]))
+            for band, s in sorted(r["by"]["price_band"].items(), key=lambda kv: -kv[1]["n"]):
+                out.append(line("  " + band, s))
     return "\n".join(out)
 
 

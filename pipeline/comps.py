@@ -7,6 +7,13 @@ Steps (matching the project spec):
   3. adjust each comp: time (ZIP home value index) + features (county regression)
   4. weight = similarity x 1/(1 + gross adjustment), distressed sales discounted
   5. fair value = weighted average; range = weighted spread
+
+Three ways to turn the comps into a value (all returned under "methods"):
+  comps     step 5 above
+  assessed  each comp's time-adjusted price / its appraiser just value gives a
+            market-to-assessment ratio; the subject's just value x the weighted
+            ratio. The appraiser's model sees land and location detail we don't.
+  blend     the average of the two
 """
 from __future__ import annotations
 
@@ -23,6 +30,11 @@ SEARCH = [  # (radius in miles, months back)
 ]
 DISTRESSED_WEIGHT = 0.5
 NET_LIMIT, GROSS_LIMIT = 0.15, 0.25
+METHODS = ["comps", "assessed", "blend"]
+JV_MIN_COMPS = 3        # comps with a usable just value needed for the assessed method
+JV_RATIO_BAND = 1.5     # drop comps whose ratio is beyond x/÷ this of the median ratio
+JV_SUBJECT_MIN = 0.6    # subject just value per sq ft must be >= this x the comps' (else
+                        # it is likely a partial assessment, e.g. a home finished after Jan 1)
 # Similarity penalty per unit of difference (see _similarity); site/comps.js has the same table.
 SIM = {"size": 1.0, "age": 0.6, "lot": 0.3, "baths": 0.4, "pool": 1.0, "dist": 0.8, "months": 0.5,
        "same_nbhd": 0.3, "same_subdivision": 0.4}
@@ -104,6 +116,49 @@ def _similarity(c: pd.DataFrame, subj: pd.Series, as_of: pd.Timestamp) -> pd.Ser
                + SIM["pool"] * pool + SIM["dist"] * dist + SIM["months"] * months)
     penalty -= SIM["same_nbhd"] * same_nb + SIM["same_subdivision"] * same_sub
     return 1 / (1 + penalty.clip(lower=0))
+
+
+def _median(xs: list[float]) -> float:
+    v = sorted(xs)
+    k = len(v) // 2
+    return v[k] if len(v) % 2 else (v[k - 1] + v[k]) / 2
+
+
+def assessed_value(subject: pd.Series, comps: list[dict]) -> dict:
+    """Subject just value x the comps' weighted market-to-just-value ratio (see module doc)."""
+    jv, sqft = _f(subject.get("just_value")), _f(subject.get("sqft"))
+    usable = [c for c in comps if c["just_value"] is not None and c["just_value"] > 0]
+    if not (jv > 0) or len(usable) < JV_MIN_COMPS:
+        return {"fair_value": None, "range": None, "reason": "not enough comps with an appraiser value"}
+    med = _median([c["time_adjusted"] / c["just_value"] for c in usable])
+    kept = [c for c in usable if med / JV_RATIO_BAND <= c["time_adjusted"] / c["just_value"] <= med * JV_RATIO_BAND]
+    if len(kept) < JV_MIN_COMPS:
+        return {"fair_value": None, "range": None, "reason": "comps' ratios disagree too much"}
+    jv_psf = _median([c["just_value"] / c["sqft"] for c in kept])
+    if sqft > 0 and jv / sqft < JV_SUBJECT_MIN * jv_psf:
+        return {"fair_value": None, "range": None,
+                "reason": "the appraiser value looks partial (new or changed since January 1)"}
+    w = np.array([c["similarity"] * (DISTRESSED_WEIGHT if c["sale_class"] == "distressed" else 1.0) for c in kept])
+    r = np.array([c["time_adjusted"] / c["just_value"] for c in kept])
+    if w.sum() == 0:
+        return {"fair_value": None, "range": None, "reason": "no weight"}
+    ratio = float((w * r).sum() / w.sum())
+    fair = jv * ratio
+    spread = float(np.sqrt((w * (jv * r - fair) ** 2).sum() / w.sum()))
+    return {"fair_value": fair, "range": [fair - spread, fair + spread], "ratio": ratio, "just_value": jv,
+            "used": [c["parcel_id"] for c in kept]}
+
+
+def combine_methods(subject: pd.Series, comps: list[dict], fair, spread) -> dict:
+    m = {"comps": {"fair_value": fair, "range": None if fair is None else [fair - spread, fair + spread]}}
+    m["assessed"] = assessed_value(subject, comps) if comps else {"fair_value": None, "range": None}
+    a = m["assessed"]
+    if fair is not None and a["fair_value"] is not None:
+        m["blend"] = {"fair_value": (fair + a["fair_value"]) / 2,
+                      "range": [(m["comps"]["range"][i] + a["range"][i]) / 2 for i in (0, 1)]}
+    else:
+        m["blend"] = {"fair_value": None, "range": None, "reason": "needs both comps and assessed values"}
+    return m
 
 
 def adjust(comp: pd.Series, subj_x: pd.Series, comp_x: pd.Series, model: dict,
@@ -193,6 +248,7 @@ def value_subject(subject: pd.Series, sales: pd.DataFrame, model: dict, tindex: 
             "sqft": float(c["sqft"]), "year_built": c["year_built"], "lot_acres": c["lot_acres"],
             "baths": c["baths"], "pool": bool(c["pool"]), "stories": c["stories"],
             "same_neighborhood": bool(c["nbhd"] == subject["nbhd"]),
+            "just_value": (None if not (_f(c.get("just_value")) > 0) else float(c["just_value"])),
             "similarity": float(c["similarity"]), "weight": float(weight), "flags": flags, **adj,
         })
 
@@ -212,6 +268,7 @@ def value_subject(subject: pd.Series, sales: pd.DataFrame, model: dict, tindex: 
         "search": reach,
         "fair_value": fair,
         "range": None if fair is None else [fair - spread, fair + spread],
+        "methods": combine_methods(subject, comps, fair, spread),
         "comps": comps,
         "model": {k: model[k] for k in ["n_sales", "window", "r2", "median_abs_pct_error"]},
     }

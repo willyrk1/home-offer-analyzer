@@ -20,6 +20,7 @@ const sales = (neighbors[subject.zip] || [subject.zip]).flatMap((z) =>
 const r = Comps.valueSubject(subject, sales, model, tindex, { asOf: meta.latest_sale });
 const extra = process.argv[5] ? Comps.explain(Comps.normalizeAddress(process.argv[5]), subject, sales, model, tindex, r) : null;
 console.log(JSON.stringify({ fair_value: r.fair_value, range: r.range, search: r.search, as_of: r.as_of,
+  methods: Object.fromEntries(Object.entries(r.methods).map(([k, v]) => [k, { fair_value: v.fair_value, range: v.range }])),
   comps: r.comps.map((c) => ({ parcel_id: c.parcel_id, adjusted_price: c.adjusted_price, weight: c.weight })),
   explain: extra && { verdict: extra.verdict, reasons: extra.reasons,
     what_if: extra.whatIf ? extra.whatIf.fair_value : null } }));

@@ -10,6 +10,8 @@
   // Similarity penalty per unit of difference; same table as SIM in pipeline/comps.py.
   const SIM = { size: 1.0, age: 0.6, lot: 0.3, baths: 0.4, pool: 1.0, dist: 0.8, months: 0.5,
     same_nbhd: 0.3, same_subdivision: 0.4 };
+  const METHODS = ["comps", "assessed", "blend"];
+  const JV_MIN_COMPS = 3, JV_RATIO_BAND = 1.5, JV_SUBJECT_MIN = 0.6;   // as in pipeline/comps.py
   const FEATURES = ["ln_sqft", "age", "new", "ln_lot", "baths", "pool", "two_story", "quality"];
   const DAY = 86400000;
 
@@ -26,6 +28,10 @@
     return new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), Math.min(day, last)));
   }
   function dayOfYear(d) { return Math.round((d - Date.UTC(d.getUTCFullYear(), 0, 1)) / DAY) + 1; }
+  function middle(xs) {                  // comps._median
+    const v = xs.slice().sort((a, b) => a - b), k = Math.floor(v.length / 2);
+    return v.length % 2 ? v[k] : (v[k - 1] + v[k]) / 2;
+  }
   function median(xs) {
     const v = xs.filter(isNum).sort((a, b) => a - b);
     if (!v.length) return 2;
@@ -200,6 +206,37 @@
     return finish(subject, chosen, model, tindex, asOf, reach, pool);
   }
 
+  // ---------- other ways to turn comps into a value (comps.assessed_value / combine_methods) ----------
+  function assessedValue(subject, comps) {
+    const jv = num(subject.just_value, NaN), sqft = num(subject.sqft, NaN);
+    const none = (reason) => ({ fair_value: null, range: null, reason });
+    const usable = comps.filter((c) => isNum(c.just_value) && c.just_value > 0);
+    if (!(jv > 0) || usable.length < JV_MIN_COMPS) return none("not enough comps with an appraiser value");
+    const ratio = (c) => c.time_adjusted / c.just_value;
+    const med = middle(usable.map(ratio));
+    const kept = usable.filter((c) => med / JV_RATIO_BAND <= ratio(c) && ratio(c) <= med * JV_RATIO_BAND);
+    if (kept.length < JV_MIN_COMPS) return none("comps' ratios disagree too much");
+    const jvPsf = middle(kept.map((c) => c.just_value / c.sqft));
+    if (sqft > 0 && jv / sqft < JV_SUBJECT_MIN * jvPsf) return none("the appraiser value looks partial (new or changed since January 1)");
+    const w = kept.map((c) => c.similarity * (c.sale_class === "distressed" ? DISTRESSED_WEIGHT : 1));
+    const W = w.reduce((a, b) => a + b, 0);
+    if (!W) return none("no weight");
+    const r = kept.reduce((a, c, i) => a + w[i] * ratio(c), 0) / W;
+    const fair = jv * r;
+    const spread = Math.sqrt(kept.reduce((a, c, i) => a + w[i] * (jv * ratio(c) - fair) ** 2, 0) / W);
+    return { fair_value: fair, range: [fair - spread, fair + spread], ratio: r, just_value: jv, used: kept.map((c) => c.parcel_id) };
+  }
+
+  function combineMethods(subject, comps, fair, spread) {
+    const m = { comps: { fair_value: fair, range: fair == null ? null : [fair - spread, fair + spread] } };
+    m.assessed = comps.length ? assessedValue(subject, comps) : { fair_value: null, range: null };
+    const a = m.assessed;
+    m.blend = fair != null && a.fair_value != null
+      ? { fair_value: (fair + a.fair_value) / 2, range: [0, 1].map((i) => (m.comps.range[i] + a.range[i]) / 2) }
+      : { fair_value: null, range: null, reason: "needs both comps and assessed values" };
+    return m;
+  }
+
   function finish(subject, chosen, model, tindex, asOf, reach, pool) {
     const yearNow = asOf.getUTCFullYear() + dayOfYear(asOf) / 366;
     const subjRow = { sqft: subject.sqft, year_built: subject.year_built, lot_acres: subject.lot_acres,
@@ -227,8 +264,10 @@
       fair = comps.reduce((a, c) => a + c.weight * c.adjusted_price, 0) / W;
       spread = Math.sqrt(comps.reduce((a, c) => a + c.weight * (c.adjusted_price - fair) ** 2, 0) / W);
     }
+    for (const c of comps) c.just_value = isNum(c.just_value) && c.just_value > 0 ? c.just_value : null;
     return { subject, as_of: ymd(asOf), search: reach, fair_value: fair,
-      range: fair == null ? null : [fair - spread, fair + spread], comps, pool_size: pool.length };
+      range: fair == null ? null : [fair - spread, fair + spread],
+      methods: combineMethods(subject, comps, fair, spread), comps, pool_size: pool.length };
   }
 
   /** Why wasn't this sale a comp? Returns {verdict, reasons[], sale, whatIf}. */
@@ -289,7 +328,7 @@
     };
   }
 
-  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, normalizeAddress, parseAddress, candidateZips, fromTable, design,
+  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, METHODS, normalizeAddress, parseAddress, candidateZips, fromTable, design,
     timeFactor, valueSubject, explain, haversine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Comps = api;

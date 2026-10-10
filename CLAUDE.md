@@ -132,9 +132,16 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
 - **Tuning** (`pipeline/tune.py`, Oct 2026): coordinate descent over SIM weights, comp
   counts, distressed weight, radius. Search months 9.61% -> 9.27%, but held-back months
   9.39% -> 9.37%: noise. Defaults kept. Comp selection is not the bottleneck; missing
-  condition data is. Ideas not yet tried: comp sale/just-value ratio applied to the
-  subject's just value (backtest on 2026 sales only, since just value is set Jan 1 from
-  prior-year sales); price-level bias correction; a wider, calibrated range.
+  condition data is.
+- **Valuation methods** (`comps.METHODS`, both engines): `comps`, `assessed` (subject just
+  value x comps' weighted time-adjusted price / just value; no feature adjustments; n/a when
+  the subject's just value looks partial, e.g. finished after Jan 1) and `blend` (average).
+  Compared on 2026 sales only (just values are as of Jan 1 from earlier sales), same 7,658
+  sales: comps 9.33%, assessed 9.03%, blend 8.76%. Blend wins every month, but its edge
+  shrinks from ~0.7 pts (Feb–Apr) to ~0.3 (Jul–Sep): stale Jan 1 values or slight leakage.
+  backtest.json `methods.best` sets the page default; all methods stay selectable (Bill:
+  offer every viable option, default to the best). Just value ≈ 85% of market (median
+  sale/JV 1.15). Not yet tried: price-level bias correction; a wider, calibrated range.
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.

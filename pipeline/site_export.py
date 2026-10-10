@@ -29,7 +29,7 @@ PARCEL_COLS = ["parcel_id", "address", "address_key", "city", "zip", "property_t
                "subdivision", "lat", "lon", "just_value"]
 SALE_COLS = ["parcel_id", "address", "zip", "date", "price", "sale_class", "reason", "property_type",
              "sqft", "year_built", "baths", "stories", "quality", "pool", "lot_acres", "nbhd",
-             "subdivision", "lat", "lon"]
+             "subdivision", "lat", "lon", "just_value"]
 
 
 def _val(v):

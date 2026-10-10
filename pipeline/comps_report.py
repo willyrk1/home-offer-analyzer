@@ -42,6 +42,11 @@ def render(r: dict) -> str:
         f"  as of {r['as_of']}; comps {r['search']['area']}, last {r['search']['months']} months"
         + ("" if r["search"]["located"] else "  [no parcel coordinates: matched by area]")
         + ("  [THIN: widest search used]" if r["search"].get("thin") else ""),
+        "  methods: " + "; ".join(
+            f"{k} {money(v['fair_value'])}" if v["fair_value"] else f"{k} n/a ({v.get('reason')})"
+            for k, v in r["methods"].items())
+        + (f"  [appraiser ratio {r['methods']['assessed']['ratio']:.3f} x just value]"
+           if r["methods"]["assessed"]["fair_value"] else ""),
         f"  county model: {r['model']['n_sales']} sales {r['model']['window'][0]}..{r['model']['window'][1]}, "
         f"R2 {r['model']['r2']:.3f}, median abs error {r['model']['median_abs_pct_error']:.1f}%",
         "",

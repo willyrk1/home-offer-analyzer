@@ -149,6 +149,18 @@ def assessed_value(subject: pd.Series, comps: list[dict]) -> dict:
             "used": [c["parcel_id"] for c in kept]}
 
 
+def calibrated_range(fair, low, high, zip_code, cal: dict | None, level: str = "80"):
+    """Range that held the sale price `level`% of the time in the backtest (see backtest.calibrate):
+    fair x exp(+/-h), h = sqrt((a x ZIP's typical log miss)^2 + (k x comps' relative spread)^2)."""
+    if fair is None or low is None or not cal or str(level) not in cal["levels"]:
+        return None
+    lv = cal["levels"][str(level)]
+    s = max((high - low) / 2 / fair, 0.005)
+    z = cal["zip_scale"].get(zip_code, cal["overall_scale"])
+    h = math.sqrt((lv["a"] * z) ** 2 + (lv["k"] * s) ** 2)
+    return [fair * math.exp(-h), fair * math.exp(h)]
+
+
 def combine_methods(subject: pd.Series, comps: list[dict], fair, spread) -> dict:
     m = {"comps": {"fair_value": fair, "range": None if fair is None else [fair - spread, fair + spread]}}
     m["assessed"] = assessed_value(subject, comps) if comps else {"fair_value": None, "range": None}

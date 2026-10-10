@@ -167,3 +167,7 @@ table.comps th, table.comps td { padding: 8px 7px; }
 .methods .m-value { font-weight: 650; text-align: right; }
 .methods .m-note { grid-column: 2 / span 2; font-size: 13px; color: var(--muted); }
 .methods .method.off { opacity: 0.55; cursor: default; }
+
+.levels { margin-top: 4px; display: flex; gap: 4px; font-size: 13px; }
+.levels .link { padding: 0 6px; border-radius: 999px; }
+.levels .link.on { background: var(--accent); color: var(--panel); text-decoration: none; }

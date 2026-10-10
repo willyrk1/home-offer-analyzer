@@ -130,3 +130,16 @@ def test_address_index_and_autocomplete(built):
     assert nearest[0]["near"] and nearest[0]["key"].endswith("MONTGOMERY BELL ROAD")
     assert street[0]["kind"] == "street" and street[0]["label"] == "Watoga Loop"
     assert all(r["kind"] == "street" for r in ambiguous)
+
+
+def test_calibrated_range_matches_python():
+    cal = {"zip_scale": {"33543": 0.06}, "overall_scale": 0.09,
+           "levels": {"80": {"a": 2.2, "k": 0.4}, "50": {"a": 1.0, "k": 0.2}}}
+    cases = [[449397.0, 427233.0, 471561.0, "33543", "80"], [300000.0, 250000.0, 350000.0, "34652", "50"],
+             [500000.0, 499999.0, 500001.0, "33543", "80"]]
+    script = ("const C=require(process.argv[1]);const cal=JSON.parse(process.argv[2]);"
+              "console.log(JSON.stringify(JSON.parse(process.argv[3]).map(a=>C.calibratedRange(a[0],a[1],a[2],a[3],cal,a[4]))));")
+    out = json.loads(subprocess.run(["node", "-e", script, str(ROOT / "site" / "comps.js"), json.dumps(cal),
+                                     json.dumps(cases)], capture_output=True, text=True, check=True).stdout)
+    for js, args in zip(out, cases):
+        assert js == pytest.approx(comps.calibrated_range(*args[:4], cal, args[4]), rel=1e-12)

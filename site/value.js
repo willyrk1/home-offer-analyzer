@@ -4,7 +4,7 @@ const COUNTY = "pasco";
 const BASE = `data/counties/${COUNTY}/`;
 const $ = (s) => document.querySelector(s);
 const cache = new Map();
-const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, explain: null, method: null };
+const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, explain: null, method: null, level: "80" };
 const METHOD_NAMES = { comps: "Adjusted comps", assessed: "Appraiser ratio", blend: "Blend of both" };
 const METHOD_DESC = {
   comps: "nearby sales, each adjusted for every difference from this house",
@@ -100,7 +100,9 @@ function render() {
 
   const method = chosenMethod(r);
   const m = r.methods[method];
-  const fair = m.fair_value, range = m.range;
+  const fair = m.fair_value;
+  const cal = calibration(method);
+  const range = (cal && Comps.calibratedRange(fair, m.range && m.range[0], m.range && m.range[1], s.zip, cal, state.level)) || m.range;
   const vsList = list && fair ? (list / fair - 1) * 100 : null;
   state.ctx.lastAssessedUsed = r.methods.assessed.used || null;
   const searchText = `${r.comps.filter((c) => !c.forced).length} comps ${esc(r.search.area)}, sold in the last ${r.search.months} months` +
@@ -113,7 +115,9 @@ function render() {
       </div>
       <div class="tiles">
         <div class="tile hero"><div class="label">Fair value · ${esc(METHOD_NAMES[method].toLowerCase())}</div><div class="value">${money(fair)}</div>
-          <div class="note">range ${range ? money(range[0]) + " – " + money(range[1]) : "—"}${rangeOdds(method)}</div></div>
+          <div class="note">${cal ? `${state.level}% range` : "range"} ${range ? money(range[0]) + " – " + money(range[1]) : "—"}${rangeNote(cal)}</div>
+          ${cal ? `<div class="levels" role="group" aria-label="Range width">${Object.keys(cal.levels).map((lv) =>
+            `<button type="button" class="link${lv === state.level ? " on" : ""}" data-level="${lv}" aria-pressed="${lv === state.level}">${lv}%</button>`).join("")}</div>` : ""}</div>
         ${list ? `<div class="tile"><div class="label">List price</div><div class="value ${vsList > 0 ? "up-seller" : "up-buyer"}">${money(list)}</div>
           <div class="note">${pct(vsList)} vs fair value${range && list > range[1] ? " · above the range" : range && list < range[0] ? " · below the range" : ""}</div></div>` : ""}
         <div class="tile"><div class="label">The house</div><div class="value small">${Math.round(s.sqft).toLocaleString()} sq ft</div>
@@ -150,6 +154,7 @@ function render() {
       <div id="why-out">${state.explain ? explainHtml(state.explain, r) : ""}</div>
     </div>`;
 
+  box.querySelectorAll("[data-level]").forEach((b) => b.onclick = () => { state.level = b.dataset.level; render(); });
   box.querySelectorAll("input[name=method]").forEach((el) => el.onchange = () => { state.method = el.value; render(); });
   $("#opt-distressed").onchange = (e) => { state.opts.includeDistressed = e.target.checked; render(); };
   $("#opt-math").onchange = (e) => { state.showMath = e.target.checked; render(); };
@@ -215,10 +220,17 @@ function assessedText(r, method) {
 }
 
 // ---------- how accurate is this? (backtest.json from pipeline/backtest.py) ----------
-function rangeOdds(method) {
-  const st = methodStats(method);
-  if (!st) return "";
-  return `<br>about ${Math.round(st.view.overall.in_range_pct / 10)} in 10 past sales landed in their range`;
+function calibration(method) {
+  const bt = state.ctx.backtest;
+  const cal = bt && bt.methods && bt.methods.ranges && bt.methods.ranges[method];
+  if (cal && !cal.levels[state.level]) state.level = Object.keys(cal.levels).includes("80") ? "80" : Object.keys(cal.levels)[0];
+  return cal || null;
+}
+
+function rangeNote(cal) {
+  if (!cal) return "";
+  const c = cal.levels[state.level];
+  return `<br>in past sales, ranges like this held the price ${Math.round(c.check_coverage_pct)}% of the time (wider where we miss more)`;
 }
 
 function accuracyHtml(r, method) {
@@ -245,17 +257,26 @@ function accuracyHtml(r, method) {
       <p class="explain">We valued ${bt.overall.valued.toLocaleString()} Pasco market sales (${fmtDate(bt.sales_from)} – ${fmtDate(bt.sales_to)}) the same way,
         each as of the day before it sold and using only sales and prices known then, and compared with what they sold for.</p>
       <div class="table-scroll"><table class="acc">
-        <thead><tr><th></th><th class="num">Sales</th><th class="num">Typical miss</th><th class="num">Within 10%</th><th class="num">Lean</th><th class="num">In range</th></tr></thead>
+        <thead><tr><th></th><th class="num">Sales</th><th class="num">Typical miss</th><th class="num">Within 10%</th><th class="num">Lean</th></tr></thead>
         <tbody>${rows.map(([label, g]) => `<tr><td>${esc(label)}</td><td class="num">${g.valued.toLocaleString()}</td>
           <td class="num">${g.median_abs_error_pct.toFixed(1)}%</td><td class="num">${g.within_10_pct.toFixed(0)}%</td>
-          <td class="num">${lean(g.bias_pct)}</td><td class="num">${g.in_range_pct.toFixed(0)}%</td></tr>`).join("")}</tbody>
+          <td class="num">${lean(g.bias_pct)}</td></tr>`).join("")}</tbody>
       </table></div>
       ${warn}
+      ${rangeCheck(method)}
       <p class="explain">Typical miss = median gap between our value and the sale price; half of sales missed by less. Lean = whether we tend to come in high or low.
         ${stats.from !== state.ctx.backtest.sales_from ? `Methods are compared on sales since ${fmtDate(stats.from)}, after the appraiser's January 1 values were set, so the appraiser's figure never saw the sale it's tested on.` : ""}
         ${bt.overall.regression_only ? `The county model alone, without comps, missed by ${bt.overall.regression_only.median_abs_error_pct.toFixed(1)}%.` : ""}
         Source: Pasco County Property Appraiser recorded sales, backtest run on sales through ${esc(bt.sales_to)}.</p>
     </details>`;
+}
+
+function rangeCheck(method) {
+  const cal = calibration(method);
+  if (!cal) return "";
+  return `<p class="explain">Ranges are sized from how far off we were in past sales in this ZIP and how much the comps disagree.
+    Fitted on alternate months and checked on the others, they held the sale price ${Object.entries(cal.levels)
+      .map(([lv, c]) => `${Math.round(c.check_coverage_pct)}% of the time (${lv}% range)`).join(", ")}.</p>`;
 }
 
 function addressOf(parcelId) {

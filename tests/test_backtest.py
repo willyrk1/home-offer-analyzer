@@ -64,3 +64,19 @@ def test_regression_baseline_and_settings(built):
     with pytest.raises(KeyError):
         with backtest.settings({"nonsense": 1}):
             pass
+
+
+def test_calibrated_ranges_hold_their_share(built):
+    parcels, sales, tindex = built
+    df = backtest.run(parcels, sales, tindex, months=9)
+    rep = backtest.report(df)
+    cal = rep["methods"]["ranges"]["blend"]
+    assert cal is not None and set(cal["levels"]) == {"50", "80", "90"}
+    held = [cal["levels"][lv]["check_coverage_pct"] for lv in ("50", "80", "90")]
+    assert held == sorted(held) and 30 < held[0] < 75 and held[2] > 75   # wider levels hold more
+    lo, hi = comps.calibrated_range(400_000, 380_000, 420_000, "33543", cal, "80")
+    assert lo < 400_000 < hi and hi / 400_000 == pytest.approx(400_000 / lo)
+    assert comps.calibrated_range(None, None, None, "33543", cal) is None
+    # Price bands come from our value, so every valued sale has one.
+    assert sum(s["n"] for s in rep["methods"]["by_method"]["blend"]["by"]["price_band"].values()) >= \
+        rep["methods"]["by_method"]["blend"]["overall"]["valued"] - 30 * 6

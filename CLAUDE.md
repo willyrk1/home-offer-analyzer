@@ -141,7 +141,16 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
   shrinks from ~0.7 pts (Feb–Apr) to ~0.3 (Jul–Sep): stale Jan 1 values or slight leakage.
   backtest.json `methods.best` sets the page default; all methods stay selectable (Bill:
   offer every viable option, default to the best). Just value ≈ 85% of market (median
-  sale/JV 1.15). Not yet tried: price-level bias correction; a wider, calibrated range.
+  sale/JV 1.15).
+- **No price-level bias.** The "cheap homes valued 8% high, $800K+ 8% low" pattern was an
+  artifact of grouping by *sale price* (sorting on the outcome). Grouped by *our value*,
+  lean is within ±1.5% in every band; a fitted correction made held-back months worse
+  (9.18% -> 9.68%). Rejected. Reports now band by our value.
+- **Ranges are calibrated** (`backtest.calibrate`, `comps.calibrated_range`, both engines):
+  fair x exp(±h), h = sqrt((a x ZIP's median abs log miss)² + (k x comps' relative spread)²),
+  fitted per method for 50/80/90% on odd months, checked on even: held 51/80/90% (blend).
+  Adapts locally: 80% half-width ~±14% in 33543, ~±50% in 34652. Page default 80%,
+  buttons for 50/90. The old ±1-spread range (held 60%) is gone.
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.

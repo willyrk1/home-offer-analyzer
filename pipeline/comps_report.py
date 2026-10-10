@@ -78,12 +78,19 @@ def main(argv=None):
     parcels = pd.read_parquet(work / "parcels.parquet")
     sales = pd.read_parquet(work / "sales.parquet")
     model = json.loads((a.site_dir / "counties" / a.county / "model.json").read_text())
+    bt_path = a.site_dir / "counties" / a.county / "backtest.json"
+    ranges = json.loads(bt_path.read_text()).get("methods", {}).get("ranges", {}) if bt_path.exists() else {}
     tindex = load_time_index(a.site_dir)
     for addr in a.address:
         print("=" * 100)
         try:
             subj = comps.find_subject(parcels, addr, pasco.normalize_address)
-            print(render(comps.value_subject(subj, sales, model, tindex)))
+            r = comps.value_subject(subj, sales, model, tindex)
+            print(render(r))
+            for m, v in r["methods"].items():
+                rng = comps.calibrated_range(v["fair_value"], *(v["range"] or [None, None]), subj["zip"], ranges.get(m))
+                if rng:
+                    print(f"  {m:<9} 80% range {money(rng[0])} – {money(rng[1])}")
         except LookupError as e:
             print(e)
 

@@ -35,6 +35,7 @@ from .build import _clean
 
 ROOT = Path(__file__).resolve().parent.parent
 PRICE_BANDS = [0, 250_000, 350_000, 450_000, 600_000, 800_000, math.inf]
+RANGE_LEVELS = ("50", "80", "90")   # % of sales a range should hold
 POOL_MONTHS = 19      # longest search window (18 months) plus slack
 BOX_MILES = 5.2       # widest search radius (5 mi) plus slack
 
@@ -191,11 +192,58 @@ def summarize(df: pd.DataFrame, method: str = "comps") -> dict:
 
 
 def _report(df: pd.DataFrame, method: str, min_n: int) -> dict:
+    # Price bands by OUR value, not the sale price: grouping by the outcome makes any noisy
+    # estimate look high on cheap sales and low on dear ones, and the page only knows our value.
+    value = pd.to_numeric(df[f"{method}_value"] if f"{method}_value" in df else df["fair_value"])
+    df = df.assign(price_band=value.map(lambda x: _band(x) if pd.notna(x) else None))
     groups = {}
     for col in ["property_type", "price_band", "zip", "new_build", "search_area"]:
         g = {str(k): summarize(sub, method) for k, sub in df.groupby(col)}
         groups[col] = {k: s for k, s in g.items() if s["n"] >= min_n}
     return {"overall": summarize(df, method), "by": groups}
+
+
+def _fit_range(lr: pd.Series, s: pd.Series, z: pd.Series, target: float) -> tuple[float, float]:
+    """Narrowest (a, k) whose range h = sqrt((a z)^2 + (k s)^2) holds >= target of the sales."""
+    best = None
+    for a in np.linspace(0.0, 4.0, 41):
+        for k in np.linspace(0.0, 4.0, 21):
+            h = np.sqrt((a * z) ** 2 + (k * s) ** 2)
+            if (lr.abs() <= h).mean() >= target and (best is None or h.mean() < best[2]):
+                best = (float(a), float(k), float(h.mean()))
+    return (best[0], best[1]) if best else (4.0, 4.0)
+
+
+def calibrate(df: pd.DataFrame, method: str, min_zip: int = 30) -> dict | None:
+    """Range calibration for a method. Fitted on odd months and checked on even months
+    (reported as check_coverage_pct), then refitted on all months for use."""
+    v = pd.to_numeric(df.get(f"{method}_value"))
+    if v is None:
+        return None
+    d = df[v.notna()].assign(value=v[v.notna()])
+    if len(d) < 200:
+        return None
+    d = d.assign(lr=np.log(d["price"] / d["value"]),
+                 s=((pd.to_numeric(d[f"{method}_high"]) - pd.to_numeric(d[f"{method}_low"])) / 2 / d["value"]).clip(lower=0.005))
+
+    def scales(rows):
+        g = rows.groupby("zip")["lr"]
+        per = g.apply(lambda x: x.abs().median())[g.size() >= min_zip]
+        return {str(k): float(x) for k, x in per.items()}, float(rows["lr"].abs().median())
+
+    odd = d["sale_date"].dt.to_period("M").map(lambda m: m.ordinal % 2 == 1)
+    train, test = d[odd], d[~odd]
+    zs, overall = scales(train)
+    z_of = lambda rows, zs, o: rows["zip"].map(zs).fillna(o)
+    zs_all, overall_all = scales(d)
+    levels = {}
+    for lvl in RANGE_LEVELS:
+        a, k = _fit_range(train["lr"], train["s"], z_of(train, zs, overall), int(lvl) / 100)
+        h = np.sqrt((a * z_of(test, zs, overall)) ** 2 + (k * test["s"]) ** 2)
+        a2, k2 = _fit_range(d["lr"], d["s"], z_of(d, zs_all, overall_all), int(lvl) / 100)
+        levels[lvl] = {"a": a2, "k": k2, "check_coverage_pct": float((test["lr"].abs() <= h).mean() * 100),
+                       "check_median_half_width_pct": float(np.expm1(h).median() * 100)}
+    return {"zip_scale": zs_all, "overall_scale": overall_all, "levels": levels, "n": int(len(d))}
 
 
 def report(df: pd.DataFrame, min_n: int = 30) -> dict:
@@ -216,7 +264,8 @@ def report(df: pd.DataFrame, min_n: int = 30) -> dict:
         "price_bands": [[lo, None if hi == math.inf else hi, _band(lo)] for lo, hi in zip(PRICE_BANDS, PRICE_BANDS[1:])],
         "by": main["by"],
         "methods": {"sales_from": roll_start.strftime("%Y-%m-%d"), "n": int(len(fair)),
-                    "best": min(scored, key=scored.get) if scored else "comps", "by_method": by_method},
+                    "best": min(scored, key=scored.get) if scored else "comps", "by_method": by_method,
+                    "ranges": {m: calibrate(fair, m) for m in comps.METHODS}},
     }
 
 
@@ -239,6 +288,11 @@ def render(rep: dict) -> str:
                     f"default: {m['best']}"]
         for name, r in m["by_method"].items():
             out.append(line(name, r["overall"]))
+            cal = m.get("ranges", {}).get(name)
+            if cal:
+                out.append("    calibrated ranges (checked on held-back months): " + ", ".join(
+                    f"{lv}% -> held {c['check_coverage_pct']:.0f}%, median ±{c['check_median_half_width_pct']:.0f}%"
+                    for lv, c in cal["levels"].items()))
             for band, s in sorted(r["by"]["price_band"].items(), key=lambda kv: -kv[1]["n"]):
                 out.append(line("  " + band, s))
     return "\n".join(out)

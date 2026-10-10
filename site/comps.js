@@ -227,6 +227,16 @@
     return { fair_value: fair, range: [fair - spread, fair + spread], ratio: r, just_value: jv, used: kept.map((c) => c.parcel_id) };
   }
 
+  /** Same as comps.calibrated_range: a range that held the sale price `level`% of the time in the backtest. */
+  function calibratedRange(fair, low, high, zip, cal, level = "80") {
+    if (fair == null || low == null || !cal || !cal.levels[String(level)]) return null;
+    const lv = cal.levels[String(level)];
+    const s = Math.max((high - low) / 2 / fair, 0.005);
+    const z = zip in cal.zip_scale ? cal.zip_scale[zip] : cal.overall_scale;
+    const h = Math.sqrt((lv.a * z) ** 2 + (lv.k * s) ** 2);
+    return [fair * Math.exp(-h), fair * Math.exp(h)];
+  }
+
   function combineMethods(subject, comps, fair, spread) {
     const m = { comps: { fair_value: fair, range: fair == null ? null : [fair - spread, fair + spread] } };
     m.assessed = comps.length ? assessedValue(subject, comps) : { fair_value: null, range: null };
@@ -328,7 +338,7 @@
     };
   }
 
-  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, METHODS, normalizeAddress, parseAddress, candidateZips, fromTable, design,
+  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, METHODS, calibratedRange, normalizeAddress, parseAddress, candidateZips, fromTable, design,
     timeFactor, valueSubject, explain, haversine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Comps = api;

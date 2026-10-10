@@ -32,6 +32,8 @@ A free, static web site that values listed homes from closed-sale comps and sugg
 
 ## Coverage
 
+See CLAUDE.md for design decisions, data quirks and invariants.
+
 Edit `coverage.yaml` to add or remove counties, or to add single ZIPs under `extra_zips`. Every county starts at `level: market`; comps and offers need a county sales-record adapter (step 2).
 
 ## Run locally
@@ -46,6 +48,10 @@ python -m pipeline.build
 # Or preview with small synthetic sample files:
 python -m tests.fixtures raw-sample
 python -m pipeline.build --raw-dir raw-sample --offline
+
+# Pasco comps data (downloads ~800 MB the first time; reuse with --offline --raw-dir raw/pasco)
+python -m pipeline.county_build
+python -m pipeline.comps_report "1295 Montgomery Bell Rd, Wesley Chapel, FL 33543"
 
 # Serve the site
 python -m http.server -d site 8000   # then open http://localhost:8000

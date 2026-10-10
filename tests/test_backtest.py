@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from pipeline import backtest, comps, county_build
+from pipeline import backtest, comps, county_build, leverage
 from tests import pasco_fixtures as fx
 
 
@@ -80,3 +80,29 @@ def test_calibrated_ranges_hold_their_share(built):
     # Price bands come from our value, so every valued sale has one.
     assert sum(s["n"] for s in rep["methods"]["by_method"]["blend"]["by"]["price_band"].values()) >= \
         rep["methods"]["by_method"]["blend"]["overall"]["valued"] - 30 * 6
+
+
+def _fake_market(effect, seed=3):
+    """Backtest rows + Realtor.com rows where price-cut share changes move sale/value by `effect`."""
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    zips = [f"335{i:02d}" for i in range(20)]
+    months = pd.period_range("2024-01", "2026-09", freq="M")
+    rt = pd.DataFrame([{"zip": z, "date": m.to_timestamp(), "price_reduced_share": rng.uniform(0.2, 0.5),
+                        "active_listing_count": rng.uniform(100, 300), "median_days_on_market": rng.uniform(40, 90),
+                        "median_listing_price": rng.uniform(3e5, 5e5)} for z in zips for m in months])
+    sig = leverage.signals(rt).set_index(["zip", "month"])["price_cut_share_yoy_pts"]
+    rows = []
+    for _ in range(4000):
+        z, m = zips[rng.integers(20)], months[rng.integers(14, len(months))]
+        s = sig.get((z, m - 1), 0.0)
+        rows.append({"zip": z, "sale_date": m.to_timestamp() + pd.Timedelta(days=10), "blend_value": 400000.0,
+                     "price": 400000.0 * np.exp(-effect * s + rng.normal(0, 0.08))})
+    return pd.DataFrame(rows), rt
+
+
+def test_leverage_check_finds_real_signal_and_rejects_noise():
+    real = leverage.check(*_fake_market(effect=0.01))     # -1% per point of extra price cuts
+    assert real["helps"] and real["correlation"]["price_cut_share_yoy_pts"] < -0.3
+    noise = leverage.check(*_fake_market(effect=0.0))
+    assert not noise["helps"]

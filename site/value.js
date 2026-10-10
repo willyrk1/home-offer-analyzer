@@ -68,8 +68,9 @@ async function run(addressText) {
       : `No Pasco parcel matches that address.` + (found.similar.length ? ` Similar: ${found.similar.map(esc).join("; ")}.` : "");
     return;
   }
-  const sales = await loadSales(found.subject.zip, common);
-  state.ctx = { ...common, subject: found.subject, sales };
+  const [sales, market] = await Promise.all([loadSales(found.subject.zip, common),
+    getJSON(`../../zips/${found.subject.zip}.json`).catch(() => null)]);
+  state.ctx = { ...common, subject: found.subject, sales, market };
   state.opts = { includeDistressed: true, excluded: [], forced: [] };
   state.explain = null;
   $("#status").textContent = "";
@@ -130,6 +131,8 @@ function render() {
 
       ${accuracyHtml(r, method)}
 
+      ${offerHtml(r, method)}
+
       <div class="controls">
         <label><input type="checkbox" id="opt-distressed" ${state.opts.includeDistressed ? "checked" : ""}> Include distressed sales (bank-owned, short sales) at half weight</label>
         <label><input type="checkbox" id="opt-math" ${state.showMath ? "checked" : ""}> Show the math for every comp</label>
@@ -154,6 +157,7 @@ function render() {
       <div id="why-out">${state.explain ? explainHtml(state.explain, r) : ""}</div>
     </div>`;
 
+  bindOffer(r, method);
   box.querySelectorAll("[data-level]").forEach((b) => b.onclick = () => { state.level = b.dataset.level; render(); });
   box.querySelectorAll("input[name=method]").forEach((el) => el.onchange = () => { state.method = el.value; render(); });
   $("#opt-distressed").onchange = (e) => { state.opts.includeDistressed = e.target.checked; render(); };
@@ -277,6 +281,125 @@ function rangeCheck(method) {
   return `<p class="explain">Ranges are sized from how far off we were in past sales in this ZIP and how much the comps disagree.
     Fitted on alternate months and checked on the others, they held the sale price ${Object.entries(cal.levels)
       .map(([lv, c]) => `${Math.round(c.check_coverage_pct)}% of the time (${lv}% range)`).join(", ")}.</p>`;
+}
+
+// ---------- offer (site/offer.js) ----------
+const OFFER_KEY = "hoa:offer";
+const offerIn = Object.assign({ dom: "", credit: "10000", rate: "6.5", down: "20", drop: "0.25" },
+  (() => { try { return JSON.parse(localStorage.getItem(OFFER_KEY)) || {}; } catch { return {}; } })(), { dom: "" });
+const num0 = (s) => parseFloat(String(s || "").replace(/[^\d.]/g, ""));
+const listPrice = () => num0($("#list").value) || null;
+const monthName = (ym) => ym ? new Date(ym + "-01T00:00:00Z").toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : "";
+
+function offerPlan(r, method) {
+  const cal = calibration(method), m = r.methods[method];
+  if (!cal || !cal.levels["50"] || m.fair_value == null) return null;
+  const range50 = Comps.calibratedRange(m.fair_value, m.range[0], m.range[1], state.ctx.subject.zip, cal, "50");
+  return { ...Offer.plan(m.fair_value, range50, listPrice()), fair: m.fair_value, range50 };
+}
+
+function offerHtml(r, method) {
+  if (!offerPlan(r, method)) return "";
+  return `
+    <section class="offer" aria-labelledby="offer-h">
+      <h3 id="offer-h">Offer</h3>
+      <div id="offer-out"></div>
+      <div class="picker small">
+        <label for="dom">Days on market</label>
+        <input id="dom" class="narrow" inputmode="numeric" placeholder="optional" value="${esc(offerIn.dom)}">
+        <span class="explain">from the listing; list price goes in the box at the top</span>
+      </div>
+      <div id="market-out"></div>
+      <details class="accuracy" id="conc">
+        <summary><h3>Seller credit or price cut?</h3> <span>what a concession is worth to you</span></summary>
+        <div class="picker small">
+          <label for="c-credit">Credit</label><input id="c-credit" class="narrow" inputmode="numeric" value="${esc(offerIn.credit)}">
+          <label for="c-rate">Your rate %</label><input id="c-rate" class="tiny" inputmode="decimal" value="${esc(offerIn.rate)}">
+          <label for="c-down">Down %</label><input id="c-down" class="tiny" inputmode="decimal" value="${esc(offerIn.down)}">
+          <label for="c-drop">Rate cut per point %</label><input id="c-drop" class="tiny" inputmode="decimal" value="${esc(offerIn.drop)}">
+        </div>
+        <div id="conc-out"></div>
+      </details>
+    </section>`;
+}
+
+function bindOffer(r, method) {
+  if (!$("#offer-out")) return;
+  const update = () => {
+    for (const [k, id] of [["dom", "dom"], ["credit", "c-credit"], ["rate", "c-rate"], ["down", "c-down"], ["drop", "c-drop"]]) offerIn[k] = $("#" + id).value;
+    try { const { dom, ...keep } = offerIn; localStorage.setItem(OFFER_KEY, JSON.stringify(keep)); } catch { /* storage off */ }
+    renderOffer(r, method);
+  };
+  ["dom", "c-credit", "c-rate", "c-down", "c-drop"].forEach((id) => $("#" + id).addEventListener("input", update));
+  renderOffer(r, method);
+}
+
+function renderOffer(r, method) {
+  const p = offerPlan(r, method);
+  const list = listPrice();
+  const tile = (label, v, note) => `<div class="tile"><div class="label">${label}</div><div class="value small">${money(v)}</div><div class="note">${note}</div></div>`;
+  const notes = [];
+  if (p.notes.includes("listed_low")) notes.push(`Listed at ${money(list)}, below where 3 in 4 similar homes sold. That's already a good price, and other buyers will see it too: expect competition. Paying up to ${money(p.walkaway)} still matches most past sales.`);
+  if (p.notes.includes("listed_high")) notes.push(`Listed at ${money(list)}, above the price 3 in 4 similar homes sold for (${money(p.range50[1])}).`);
+  if (p.appraisal_gap.walkaway > 0) notes.push(`Appraisal check: a lender's appraiser works from the same kind of closed sales, so expect an appraisal near ${money(p.fair)}. Above that, the difference is cash you bring: ${money(p.appraisal_gap.walkaway)} at the walk-away price.`);
+  $("#offer-out").innerHTML = `
+    <div class="tiles">
+      ${tile("Opening", p.opening, "about 1 in 4 similar homes sold for less")}
+      ${tile("Target", p.target, list && p.target === list ? "the list price, which is at or below our fair value" : "our fair value: half of similar homes sold for less")}
+      ${tile("Walk away above", p.walkaway, list && p.walkaway === list && list < p.range50[1] ? "the list price: no reason to pay more" : "3 in 4 similar homes sold for less")}
+    </div>
+    ${notes.map((n) => `<p class="explain">${esc(n)}</p>`).join("")}
+    <p class="explain">These are the ends and middle of the 50% range, which held the sale price for half of past sales. None is above the list price.</p>`;
+  $("#market-out").innerHTML = marketHtml(list);
+  $("#conc-out").innerHTML = concessionsHtml(p.target);
+}
+
+function marketHtml(list) {
+  const mk = state.ctx.market, s = state.ctx.subject;
+  if (!mk) return "";
+  const i = mk.indicators || {};
+  const dom = num0(offerIn.dom);
+  const rows = [];
+  if (i.listing_dom != null) rows.push([`Typical days on market (listings)`, `${Math.round(i.listing_dom)} days`,
+    i.listing_dom_yoy_days != null ? `${i.listing_dom_yoy_days >= 0 ? "+" : ""}${Math.round(i.listing_dom_yoy_days)} vs a year ago` : "", `Realtor.com, ${monthName(i.realtor_date)}`]);
+  if (i.price_cut_share_pct != null) rows.push(["Listings with a price cut", `${i.price_cut_share_pct.toFixed(0)}%`,
+    i.price_cut_share_yoy_pts != null ? `${pct(i.price_cut_share_yoy_pts, 1).replace("%", " pts")} vs a year ago` : "", `Realtor.com, ${monthName(i.realtor_date)}`]);
+  if (i.active_listings != null) rows.push(["Active listings", Math.round(i.active_listings).toLocaleString(),
+    i.active_listings_yoy_pct != null ? `${pct(i.active_listings_yoy_pct, 0)} vs a year ago` : "", `Realtor.com, ${monthName(i.realtor_date)}`]);
+  if (i.avg_sale_to_list_pct != null) rows.push(["Sold for, vs final list price", `${i.avg_sale_to_list_pct.toFixed(1)}%`,
+    i.sold_above_list_pct != null ? `${i.sold_above_list_pct.toFixed(0)}% sold above list` : "", `Redfin, 90 days to ${monthName(i.redfin_date)}`]);
+  const lines = [];
+  if (dom && i.listing_dom) {
+    const ratio = dom / i.listing_dom;
+    lines.push(ratio >= 1.5 ? `On the market ${dom} days, well past the typical ${Math.round(i.listing_dom)} in ${s.zip}. Sellers of stale listings are often more flexible, which is room to start at the opening price and hold.`
+      : ratio <= 0.5 ? `On the market ${dom} days, newer than most (${Math.round(i.listing_dom)} typical). Sellers rarely move much in the first weeks.`
+      : `On the market ${dom} days, about typical for ${s.zip} (${Math.round(i.listing_dom)}).`);
+  }
+  if (list && i.avg_sale_to_list_pct != null) lines.push(`If it sells the way a typical ${s.zip} listing did: ${i.avg_sale_to_list_pct.toFixed(1)}% × ${money(list)} = ${money(list * i.avg_sale_to_list_pct / 100)} (that's the seller's likely expectation, not a value).`);
+  const ms = state.ctx.backtest && state.ctx.backtest.market_signals;
+  const why = ms && ms.check_median_abs_error_pct
+    ? `These don't change the offer numbers. We tested whether ZIP market signals (price cuts, listings, days on market, list prices, each vs a year earlier) predicted whether ${ms.n.toLocaleString()} past sales landed above or below our value: they didn't (on held-back months the typical miss went from ${ms.check_median_abs_error_pct.without_signals.toFixed(1)}% to ${ms.check_median_abs_error_pct.with_signals.toFixed(1)}% with them). The comps and the ZIP home value index already carry it. Use them to judge how much patience the seller has.`
+    : "These don't change the offer numbers; use them to judge how much patience the seller has.";
+  return `<h4>Market in ${esc(s.zip)}</h4>
+    <div class="table-scroll"><table class="acc"><tbody>${rows.map((r) => `<tr><td>${r[0]}<div class="src">${esc(r[3])}</div></td>
+      <td class="num">${r[1]}<div class="src">${esc(r[2])}</div></td></tr>`).join("")}</tbody></table></div>
+    ${lines.map((l) => `<p class="explain">${esc(l)}</p>`).join("")}
+    <p class="explain">${esc(why)}</p>`;
+}
+
+function concessionsHtml(price) {
+  const credit = num0(offerIn.credit), rate = num0(offerIn.rate), down = num0(offerIn.down), drop = num0(offerIn.drop);
+  if (!(credit > 0 && rate >= 0 && down >= 0 && down < 100 && drop >= 0)) return `<p class="explain">Enter a credit, your rate and down payment.</p>`;
+  const c = Offer.concessions({ price, credit, downPct: down, ratePct: rate, dropPerPoint: drop });
+  const mo = (v) => `${money(v)}/mo`;
+  return `<p class="explain">On a ${money(price)} purchase with ${down}% down (loan ${money(c.loan)}, ${mo(c.payment)} principal and interest at ${rate}%), a ${money(credit)} concession is worth:</p>
+    <ul class="checks">
+      <li><span>As a credit toward closing costs</span><span class="tag">${money(c.closing_costs.cash_saved)} less cash at closing</span></li>
+      <li><span>As a rate buydown: ${c.buydown.points.toFixed(2)} points, rate ${c.buydown.new_rate.toFixed(2)}%</span><span class="tag">${mo(c.buydown.monthly_saving)} lower payment, like a ${money(c.buydown.price_cut_equivalent)} price cut</span></li>
+      <li><span>As a price cut instead</span><span class="tag">${money(c.price_cut.cash_saved)} less down, ${mo(c.price_cut.monthly_saving)} lower payment</span></li>
+    </ul>
+    <p class="explain">A price cut also lowers property taxes and keeps the appraisal question simpler; a buydown pays off only if you keep the loan for years.
+      Points pricing varies by lender (often about ${drop}% off the rate per point); ask for a quote. Lenders cap seller credits, typically 3–9% of the price depending on the loan and down payment.</p>`;
 }
 
 function addressOf(parcelId) {

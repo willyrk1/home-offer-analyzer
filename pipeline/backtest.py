@@ -298,12 +298,26 @@ def render(rep: dict) -> str:
     return "\n".join(out)
 
 
+def market_signals(df: pd.DataFrame, raw_dir: Path) -> dict:
+    """Run the leverage check if the Realtor.com file from the market build is on disk (optional)."""
+    from . import leverage, load
+    from .build import _raw_path
+    path = _raw_path(raw_dir, "realtor_zip")
+    if not path.exists():
+        return {"helps": False, "note": f"Realtor.com file not found ({path.name}); not tested"}
+    try:
+        return leverage.check(df, load.realtor_zip(path, set(df["zip"].dropna())))
+    except Exception as e:                       # optional source: never fail the backtest
+        return {"helps": False, "note": f"check failed: {e}"}
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--county", default="pasco")
     p.add_argument("--months", type=int, default=12)
     p.add_argument("--sample", type=int)
     p.add_argument("--work-dir", type=Path)
+    p.add_argument("--raw-dir", type=Path, default=ROOT / "raw", help="market build downloads (Realtor.com)")
     p.add_argument("--site-dir", type=Path, default=ROOT / "site" / "data")
     a = p.parse_args(argv)
     work = a.work_dir or ROOT / "work" / a.county
@@ -314,6 +328,7 @@ def main(argv=None):
     df.to_parquet(work / "backtest.parquet", index=False)
     rep = report(df)
     rep.update({"county": a.county, "months": a.months, "sample": a.sample})
+    rep["market_signals"] = market_signals(df, a.raw_dir)
     out = a.site_dir / "counties" / a.county / "backtest.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(_clean(rep), indent=1))

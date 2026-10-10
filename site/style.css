@@ -171,3 +171,10 @@ table.comps th, table.comps td { padding: 8px 7px; }
 .levels { margin-top: 4px; display: flex; gap: 4px; font-size: 13px; }
 .levels .link { padding: 0 6px; border-radius: 999px; }
 .levels .link.on { background: var(--accent); color: var(--panel); text-decoration: none; }
+
+.offer { border-top: 1px solid var(--line); margin: 6px 0 18px; padding-top: 14px; }
+.offer h4 { margin: 14px 0 6px; font-size: 14px; }
+.picker.small { margin: 6px 0 10px; gap: 8px; font-size: 14px; }
+.picker.small label { font-weight: 600; }
+input.tiny { width: 72px; }
+.acc .src { color: var(--muted); font-size: 12px; font-weight: 400; white-space: normal; }

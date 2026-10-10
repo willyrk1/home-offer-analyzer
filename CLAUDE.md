@@ -151,6 +151,18 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
   fitted per method for 50/80/90% on odd months, checked on even: held 51/80/90% (blend).
   Adapts locally: 80% half-width ~±14% in 33543, ~±50% in 34652. Page default 80%,
   buttons for 50/90. The old ±1-spread range (held 60%) is gone.
+- **Market signals don't predict sale vs our value** (`pipeline/leverage.py`, run by the
+  backtest into backtest.json `market_signals`): Realtor.com ZIP YoY price-cut share, active
+  listings, listing DOM, list price (month before sale) correlate < 0.02 with log(sale/value);
+  fitted on odd months they made even months worse (8.88% -> 9.19%). So no leverage
+  adjustment: comps + ZHVI already carry it. The page shows the signals as context only.
+- **Offer** (`site/offer.js`): opening / target / walk-away = low end / fair value / high end
+  of the calibrated 50% range (≈ 25th/50th/75th percentile of where similar homes sold),
+  none above list; listed-below-range = expect competition. Appraisal check = cash gap above
+  fair value. Concessions converter: credit to closing costs vs rate buydown (points at an
+  editable rate cut per point) vs price cut, with buydown's price-cut equivalent. Optional
+  days on market vs Realtor.com ZIP listing DOM is a qualitative note only (not measurable
+  from county data).
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.
@@ -176,14 +188,10 @@ leverage.
 2. ~~Pasco sales adapter + sale classification~~ — Redfin "recently sold" CSV upload
    (fills the weeks before sales hit county records) still to do
 3. ~~County regression, comps, show-the-math, why-not-this-comp~~
-4. **Backtest + offer recommendation** ← in progress
-   - ~~Backtest~~ (`pipeline/backtest.py`, shown on the value page) and ~~tuning~~
-     (`pipeline/tune.py`; no real gain, see Model status). Next accuracy ideas there.
-   - Leverage table: sale-to-final-list by days-on-market bucket needs list prices,
-     which county data lacks — options: Realtor.com/Redfin aggregates by ZIP, or
-     user-entered list/DOM per listing. Discuss with Bill.
-   - Offer output: fair value, opening/target/walk-away, appraisal check, concessions
-     converter (rate buydown/closing costs in dollars). Builder-floor toggle for new builds.
+4. ~~Backtest + offer recommendation~~ — backtest, tuning (no gain), assessed/blend
+   methods, calibrated ranges, measured (null) market leverage, offer + appraisal check +
+   concessions converter. Still open: builder-floor toggle for new builds; Redfin
+   "recently sold" CSV upload (step 2).
 5. Own ZIP forecast model (leading indicators, trained 2012–present incl. 2022–23),
    backtest vs Zillow using `data/archive/`, accuracy-weighted blend, show as a range.
    Also: FAU-style "above long-term trend %" per ZIP (Bill asked; show trend start date).

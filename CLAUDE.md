@@ -124,6 +124,17 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
 - 1295 Montgomery Bell Rd (listed $485K, cut from $499,999 on Aug 7 listing):
   fair value $449K ($427K–$472K). Redfin estimate ~$478K. Key comp Redfin missed:
   32101 Goddard Dr (near-twin, $450K Apr 2026, 0.11 mi).
+- **Backtest** (`pipeline/backtest.py`, Oct 2025–Sep 2026, 10,376 sales, no look-ahead):
+  median abs error 9.4%, bias −0.7%, 52% within 10%, 60% inside the shown range.
+  $350K–600K 6.6–7.1%; townhomes 5.9%; new builds 4.8%; Wesley Chapel/Land O' Lakes ZIPs 5–7%.
+  Weak: under $250K 17% (bias +8.5%), $800K+ bias −7.9% (regression to the middle),
+  condos 14.5%, west Pasco (34652, 34690) 19–20%, comps from 3–5 mi 16–25%.
+- **Tuning** (`pipeline/tune.py`, Oct 2026): coordinate descent over SIM weights, comp
+  counts, distressed weight, radius. Search months 9.61% -> 9.27%, but held-back months
+  9.39% -> 9.37%: noise. Defaults kept. Comp selection is not the bottleneck; missing
+  condition data is. Ideas not yet tried: comp sale/just-value ratio applied to the
+  subject's just value (backtest on 2026 sales only, since just value is set Jan 1 from
+  prior-year sales); price-level bias correction; a wider, calibrated range.
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.
@@ -149,11 +160,9 @@ leverage.
 2. ~~Pasco sales adapter + sale classification~~ — Redfin "recently sold" CSV upload
    (fills the weeks before sales hit county records) still to do
 3. ~~County regression, comps, show-the-math, why-not-this-comp~~
-4. **Backtest + offer recommendation** ← start here
-   - Backtest: for each market sale in the last 12 months, value it as of the day
-     before its sale with its own sale excluded; report median abs % error, bias,
-     % within 5/10%, by ZIP/price band/property type. Use it to tune `_similarity`
-     weights, search radii, MIN/MAX comps. Keep Python/JS parity.
+4. **Backtest + offer recommendation** ← in progress
+   - ~~Backtest~~ (`pipeline/backtest.py`, shown on the value page) and ~~tuning~~
+     (`pipeline/tune.py`; no real gain, see Model status). Next accuracy ideas there.
    - Leverage table: sale-to-final-list by days-on-market bucket needs list prices,
      which county data lacks — options: Realtor.com/Redfin aggregates by ZIP, or
      user-entered list/DOM per listing. Discuss with Bill.

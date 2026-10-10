@@ -93,3 +93,33 @@ def test_explain_unknown_address(built):
     _, site = built
     out = run_js(site, "1295 Montgomery Bell Rd, Wesley Chapel, FL 33543", explain="1 Nowhere Lane")
     assert out["explain"]["verdict"].startswith("No recorded sale")
+
+
+def run_addr(site, queries):
+    script = ("const fs=require('fs'),Addr=require(process.argv[1]);"
+              "const idx=Addr.prepare(JSON.parse(fs.readFileSync(process.argv[2],'utf8')));"
+              "console.log(JSON.stringify(JSON.parse(process.argv[3]).map(q=>Addr.search(q,idx,5))));")
+    args = ["node", "-e", script, str(ROOT / "site" / "addr.js"),
+            str(site / "counties" / "pasco" / "addresses.json"), json.dumps(queries)]
+    return json.loads(subprocess.run(args, capture_output=True, text=True, check=True).stdout)
+
+
+def test_address_index_and_autocomplete(built):
+    _, site = built
+    idx = json.loads((site / "counties" / "pasco" / "addresses.json").read_text())
+    assert idx["cities"]["33544"] == "Wesley Chapel"
+    streets = dict(idx["streets"])
+    assert "1295" in streets["MONTGOMERY BELL ROAD"]["33544"].split()
+    exact, swapped, typo, nearest, street, ambiguous = run_addr(site, [
+        "1295 Montgomery Bell Rd, Wesley Chapel, FL 33544",   # full address with city and ZIP
+        "montgomery bell 1295",                              # street first
+        "1295 montgomry bel",                                # typos, last word still being typed
+        "1297 Montgomery Bell Rd",                           # no such number: nearest ones
+        "watga",                                             # street only
+        "9999 b",                                            # no such number, street unclear: streets
+    ])
+    for r in (exact, swapped, typo):
+        assert r[0]["value"] == "1295 Montgomery Bell Road, Wesley Chapel, FL 33544"
+    assert nearest[0]["near"] and nearest[0]["key"].endswith("MONTGOMERY BELL ROAD")
+    assert street[0]["kind"] == "street" and street[0]["label"] == "Watoga Loop"
+    assert all(r["kind"] == "street" for r in ambiguous)

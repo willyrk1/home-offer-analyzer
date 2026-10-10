@@ -3,6 +3,7 @@
 site/data/counties/<county>/
   meta.json            county summary, column lists, ZIP list, export date
   streets.json         street name -> ZIPs (to find which parcel file to load)
+  addresses.json       every street's house numbers by ZIP, for address autocomplete
   neighbors.json       ZIP -> nearby ZIPs whose sales can be comps
   tindex.json          ZIP -> monthly home value index (time adjustment)
   model.json           regression coefficients (written by county_build)
@@ -77,6 +78,19 @@ def zip_neighbors(parcels: pd.DataFrame, miles: float = NEIGHBOR_MILES) -> dict[
     return out
 
 
+def address_index(p: pd.DataFrame) -> dict:
+    """{"cities": {zip: city}, "streets": [[street, {zip: "12 14 101"}], ...]}: compact for autocomplete."""
+    cities = p.groupby("zip")["city"].agg(lambda c: c.mode().iat[0] if c.notna().any() else "").to_dict()
+    nums: dict[str, dict[str, set]] = {}
+    for key, z in zip(p["address_key"], p["zip"]):
+        num, _, street = key.partition(" ")
+        if street and num.isdigit():
+            nums.setdefault(street, {}).setdefault(z, set()).add(int(num))
+    return {"cities": {z: str(c).title() for z, c in sorted(cities.items())},
+            "streets": [[st, {z: " ".join(map(str, sorted(n))) for z, n in sorted(by_zip.items())}]
+                        for st, by_zip in sorted(nums.items())]}
+
+
 def export_county(name: str, parcels: pd.DataFrame, sales_all: pd.DataFrame, model: dict,
                   summary: dict, site_dir: Path, zip_series: dict[str, list]) -> dict:
     out = site_dir / "counties" / name
@@ -98,6 +112,7 @@ def export_county(name: str, parcels: pd.DataFrame, sales_all: pd.DataFrame, mod
         if len(parts) == 2:
             streets.setdefault(parts[1], set()).add(z)
     _write(out / "streets.json", {k: sorted(v) for k, v in sorted(streets.items())})
+    _write(out / "addresses.json", address_index(p))
     _write(out / "neighbors.json", zip_neighbors(p))
     _write(out / "tindex.json", {z: zip_series[z] for z in sorted(zip_series) if zip_series[z]})
     _write(out / "model.json", model)

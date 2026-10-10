@@ -21,7 +21,8 @@ async function getJSON(path) {
 async function loadCommon() {
   const [meta, model, tindex, streets, neighbors] = await Promise.all(
     ["meta.json", "model.json", "tindex.json", "streets.json", "neighbors.json"].map(getJSON));
-  return { meta, model, tindex, streets, neighbors };
+  const backtest = await getJSON("backtest.json").catch(() => null);   // optional
+  return { meta, model, tindex, streets, neighbors, backtest };
 }
 
 async function findSubject(text, common) {
@@ -67,6 +68,7 @@ async function run(addressText) {
   state.explain = null;
   $("#status").textContent = "";
   history.replaceState(null, "", `#a=${encodeURIComponent(addressText)}`);
+  remember(found.subject);
   render();
 }
 
@@ -101,7 +103,7 @@ function render() {
       </div>
       <div class="tiles">
         <div class="tile hero"><div class="label">Fair value</div><div class="value">${money(r.fair_value)}</div>
-          <div class="note">range ${r.range ? money(r.range[0]) + " – " + money(r.range[1]) : "—"}</div></div>
+          <div class="note">range ${r.range ? money(r.range[0]) + " – " + money(r.range[1]) : "—"}${rangeOdds()}</div></div>
         ${list ? `<div class="tile"><div class="label">List price</div><div class="value ${vsList > 0 ? "up-seller" : "up-buyer"}">${money(list)}</div>
           <div class="note">${pct(vsList)} vs fair value${r.range && list > r.range[1] ? " · above the range" : r.range && list < r.range[0] ? " · below the range" : ""}</div></div>` : ""}
         <div class="tile"><div class="label">The house</div><div class="value small">${Math.round(s.sqft).toLocaleString()} sq ft</div>
@@ -110,6 +112,8 @@ function render() {
           <div class="note">for tax purposes; usually below market</div></div>
       </div>
       <p class="explain">${searchText}. Each sale is brought to today's prices with the ZIP's home value index, then adjusted for every difference using values fitted on Pasco sales. Closer matches and smaller adjustments count more.</p>
+
+      ${accuracyHtml(r)}
 
       <div class="controls">
         <label><input type="checkbox" id="opt-distressed" ${state.opts.includeDistressed ? "checked" : ""}> Include distressed sales (bank-owned, short sales) at half weight</label>
@@ -157,6 +161,48 @@ function render() {
     state.opts.excluded = state.opts.excluded.filter((x) => x !== state.explain.sale.parcel_id);
     state.explain = null; render();
   };
+}
+
+// ---------- how accurate is this? (backtest.json from pipeline/backtest.py) ----------
+function rangeOdds() {
+  const bt = state.ctx.backtest;
+  if (!bt || !bt.overall.valued) return "";
+  return `<br>about ${Math.round(bt.overall.in_range_pct / 10)} in 10 past sales landed in their range`;
+}
+
+function accuracyHtml(r) {
+  const bt = state.ctx.backtest;
+  if (!bt || !bt.overall.valued) return "";
+  const s = state.ctx.subject;
+  const fv = r.fair_value;
+  const band = fv == null ? null : bt.price_bands.find(([lo, hi]) => fv >= lo && (hi == null || fv < hi));
+  const rows = [["All Pasco sales", bt.overall],
+    [`ZIP ${s.zip}`, bt.by.zip[s.zip]],
+    [band ? `${band[2]} homes` : null, band && bt.by.price_band[band[2]]],
+    [{ single_family: "Single-family homes", townhome: "Townhomes", condo: "Condos" }[s.property_type] || type(s.property_type),
+      bt.by.property_type[s.property_type]]]
+    .filter(([label, g]) => label && g && g.valued);
+  const lean = (b) => Math.abs(b) < 1 ? "none" : `${b > 0 ? "high" : "low"} ${Math.abs(b).toFixed(0)}%`;
+  const zipRow = bt.by.zip[s.zip];
+  const warn = zipRow && zipRow.median_abs_error_pct > 12
+    ? `<p class="explain warn">Misses are larger than usual in ZIP ${esc(s.zip)}. Older homes there vary a lot in condition and upgrades, which county records don't show — lean on the comps you can actually see.</p>` : "";
+  const fmtDate = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+  return `
+    <details class="accuracy">
+      <summary><h3>How accurate is this?</h3> <span>typical miss ${bt.overall.median_abs_error_pct.toFixed(0)}% county-wide${zipRow && zipRow.valued ? `, ${zipRow.median_abs_error_pct.toFixed(0)}% in ${esc(s.zip)}` : ""}</span></summary>
+      <p class="explain">We valued ${bt.overall.valued.toLocaleString()} Pasco market sales (${fmtDate(bt.sales_from)} – ${fmtDate(bt.sales_to)}) the same way,
+        each as of the day before it sold and using only sales and prices known then, and compared with what they sold for.</p>
+      <div class="table-scroll"><table class="acc">
+        <thead><tr><th></th><th class="num">Sales</th><th class="num">Typical miss</th><th class="num">Within 10%</th><th class="num">Lean</th><th class="num">In range</th></tr></thead>
+        <tbody>${rows.map(([label, g]) => `<tr><td>${esc(label)}</td><td class="num">${g.valued.toLocaleString()}</td>
+          <td class="num">${g.median_abs_error_pct.toFixed(1)}%</td><td class="num">${g.within_10_pct.toFixed(0)}%</td>
+          <td class="num">${lean(g.bias_pct)}</td><td class="num">${g.in_range_pct.toFixed(0)}%</td></tr>`).join("")}</tbody>
+      </table></div>
+      ${warn}
+      <p class="explain">Typical miss = median gap between our value and the sale price; half of sales missed by less. Lean = whether we tend to come in high or low.
+        ${bt.overall.regression_only ? `The county model alone, without comps, missed by ${bt.overall.regression_only.median_abs_error_pct.toFixed(1)}%.` : ""}
+        Source: Pasco County Property Appraiser recorded sales, backtest run on sales through ${esc(bt.sales_to)}.</p>
+    </details>`;
 }
 
 function addressOf(parcelId) {
@@ -230,7 +276,131 @@ function explainHtml(x, r) {
   return html + "</div>";
 }
 
-$("#lookup").onsubmit = (e) => { e.preventDefault(); run($("#addr").value); };
-$("#list").addEventListener("input", () => { if (state.ctx) render(); });
+// ---------- recently valued homes (this browser only) ----------
+const RECENT_KEY = "hoa:recent:" + COUNTY, RECENT_MAX = 10;
+
+function recents() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+}
+function saveRecents(list) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, RECENT_MAX))); } catch { /* storage off */ }
+}
+function remember(s) {
+  const item = { id: s.parcel_id, label: s.address, sub: `${s.city} ${s.zip}`,
+    value: `${s.address}, ${s.city}, FL ${s.zip}`, list: $("#list").value.trim() };
+  saveRecents([item, ...recents().filter((r) => r.id !== s.parcel_id)]);
+}
+function forget(id) { saveRecents(recents().filter((r) => r.id !== id)); }
+
+// ---------- address autocomplete ----------
+const ac = { idx: null, loading: null, items: [], active: -1, timer: null };
+const addrInput = $("#addr"), addrList = $("#addr-list");
+
+function loadAddresses() {
+  if (!ac.loading) {
+    ac.loading = getJSON("addresses.json").then((ix) => { ac.idx = Addr.prepare(ix); }).catch(() => { ac.idx = null; });
+  }
+  return ac.loading;
+}
+
+function suggestions(text) {
+  const q = text.trim().toUpperCase();
+  const words = q.split(/[\s,]+/).filter(Boolean);
+  const mine = recents().filter((r) => !q || words.every((w) => r.value.toUpperCase().includes(w)))
+    .map((r) => ({ ...r, kind: "recent" }));
+  if (!q) return mine;
+  const found = ac.idx ? Addr.search(text, ac.idx, 8) : [];
+  const seen = new Set(mine.map((r) => r.value.toUpperCase()));
+  return [...mine.slice(0, 3), ...found.filter((f) => !seen.has(f.value.toUpperCase()))].slice(0, 10);
+}
+
+function optionHtml(it, i) {
+  const tag = it.kind === "recent" ? (it.list ? `listed ${money(parseFloat(it.list.replace(/[^\d.]/g, "")))}` : "recent")
+    : it.kind === "street" ? "street" : it.near ? "nearest number" : "";
+  const forget = it.kind === "recent" ? `<button type="button" class="forget" data-forget="${esc(it.id)}" aria-label="Forget ${esc(it.label)}" tabindex="-1">✕</button>` : "";
+  return `<li role="option" id="ac-${i}" data-i="${i}" aria-selected="${i === ac.active}">
+    <span class="main">${esc(it.label)}<small>${esc(it.sub)}</small></span><span class="tag">${esc(tag)}</span>${forget}</li>`;
+}
+
+function showList(items) {
+  ac.items = items;
+  ac.active = -1;
+  if (!items.length) return closeList();
+  const firstFound = items.findIndex((it) => it.kind !== "recent");
+  addrList.innerHTML = items.map((it, i) =>
+    (i === 0 && it.kind === "recent" ? `<li class="head" role="presentation">Recently valued</li>` : "") +
+    (i === firstFound && firstFound > 0 ? `<li class="head" role="presentation">Addresses</li>` : "") +
+    optionHtml(it, i)).join("");
+  addrList.hidden = false;
+  addrInput.setAttribute("aria-expanded", "true");
+  addrInput.removeAttribute("aria-activedescendant");
+}
+
+function closeList() {
+  addrList.hidden = true;
+  ac.items = []; ac.active = -1;
+  addrInput.setAttribute("aria-expanded", "false");
+  addrInput.removeAttribute("aria-activedescendant");
+}
+
+function setActive(i) {
+  ac.active = (i + ac.items.length) % ac.items.length;
+  addrList.querySelectorAll("[role=option]").forEach((li) => li.setAttribute("aria-selected", String(+li.dataset.i === ac.active)));
+  const li = $(`#ac-${ac.active}`);
+  addrInput.setAttribute("aria-activedescendant", li.id);
+  li.scrollIntoView({ block: "nearest" });
+}
+
+function choose(it) {
+  addrInput.value = it.value;
+  if (it.kind === "street") {              // picked a street: now list its houses
+    addrInput.focus();
+    return refresh();
+  }
+  closeList();
+  if (it.kind === "recent" && it.list) $("#list").value = it.list;
+  run(it.value);
+}
+
+async function refresh() {
+  if (!ac.idx && addrInput.value.trim()) await loadAddresses();
+  if (document.activeElement === addrInput) showList(suggestions(addrInput.value));
+}
+
+addrInput.addEventListener("focus", () => {
+  loadAddresses();
+  addrInput.select();                      // typing replaces the prefilled address
+  const mine = suggestions("");
+  if (mine.length) showList(mine);
+});
+addrInput.addEventListener("input", () => { clearTimeout(ac.timer); ac.timer = setTimeout(refresh, 60); });
+addrInput.addEventListener("blur", () => setTimeout(closeList, 150));
+addrInput.addEventListener("keydown", (e) => {
+  if (addrList.hidden) {
+    if (e.key === "ArrowDown") { refresh(); e.preventDefault(); }
+    return;
+  }
+  if (e.key === "ArrowDown") { setActive(ac.active + 1); e.preventDefault(); }
+  else if (e.key === "ArrowUp") { setActive(ac.active - 1); e.preventDefault(); }
+  else if (e.key === "Escape") { closeList(); e.preventDefault(); }
+  else if (e.key === "Enter" && ac.active >= 0) { choose(ac.items[ac.active]); e.preventDefault(); }
+});
+addrList.addEventListener("mousedown", (e) => e.preventDefault());   // keep focus in the input
+addrList.addEventListener("click", (e) => {
+  const f = e.target.closest("[data-forget]");
+  if (f) { forget(f.dataset.forget); return showList(suggestions(addrInput.value === addrInput.defaultValue ? "" : addrInput.value)); }
+  const li = e.target.closest("[role=option]");
+  if (li) choose(ac.items[+li.dataset.i]);
+});
+
+$("#lookup").onsubmit = (e) => { e.preventDefault(); closeList(); run(addrInput.value); };
+$("#list").addEventListener("input", () => {
+  if (!state.ctx) return;
+  render();
+  const s = state.ctx.subject;
+  saveRecents(recents().map((r) => (r.id === s.parcel_id ? { ...r, list: $("#list").value.trim() } : r)));
+});
 const fromHash = decodeURIComponent((location.hash.match(/a=([^&]+)/) || [])[1] || "");
-if (fromHash) { $("#addr").value = fromHash; run(fromHash); }
+const last = recents()[0];
+if (fromHash) { addrInput.value = fromHash; run(fromHash); }
+else if (last) { addrInput.value = last.value; addrInput.defaultValue = last.value; if (last.list) $("#list").value = last.list; }

@@ -97,7 +97,22 @@ tbody tr:hover { background: var(--bg); }
 .nav a { color: var(--muted); text-decoration: none; }
 .nav a[aria-current="page"] { color: var(--ink); font-weight: 600; }
 .nav a:hover { color: var(--accent); }
-input.wide { flex: 1 1 320px; min-width: 0; }
+.wide { flex: 1 1 320px; min-width: 0; }
+.ac { position: relative; display: flex; }
+.ac input { flex: 1; min-width: 0; }
+.ac-list {
+  position: absolute; z-index: 10; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px 0; list-style: none;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  max-height: 340px; overflow-y: auto;
+}
+.ac-list .head { padding: 4px 12px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.ac-list [role="option"] { display: flex; align-items: baseline; gap: 8px; padding: 7px 12px; cursor: pointer; }
+.ac-list [role="option"][aria-selected="true"], .ac-list [role="option"]:hover { background: var(--grid); }
+.ac-list .main { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-list .main small { color: var(--muted); margin-left: 6px; }
+.ac-list .tag { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.ac-list .forget { border: 0; background: none; color: var(--muted); font: inherit; padding: 0 4px; cursor: pointer; }
+.ac-list .forget:hover { color: var(--ink); }
 input.narrow { width: 130px; }
 button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--accent);
   background: var(--accent); color: var(--bg); cursor: pointer; font-weight: 600; }
@@ -133,3 +148,13 @@ table.comps th, table.comps td { padding: 8px 7px; }
   table.comps tr.comp td.actions { grid-column: 1 / -1; }
   .mathtable, .mathtable tbody { display: table; width: 100%; }
 }
+
+.accuracy { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin: 0 0 18px; }
+.accuracy summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.accuracy summary h3 { display: inline; margin: 0; }
+.accuracy summary span { color: var(--muted); font-size: 14px; }
+.accuracy table.acc { width: 100%; border-collapse: collapse; font-size: 14px; margin: 4px 0 8px; }
+.accuracy .acc th, .accuracy .acc td { padding: 5px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+.accuracy .acc th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.accuracy .acc .num { text-align: right; white-space: nowrap; }
+.explain.warn { color: var(--seller); }

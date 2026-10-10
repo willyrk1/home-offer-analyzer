@@ -18,7 +18,11 @@
   <main class="wrap">
     <form id="lookup" class="picker" autocomplete="off">
       <label for="addr">Address</label>
-      <input id="addr" class="wide" placeholder="1295 Montgomery Bell Rd, Wesley Chapel, FL 33543" required>
+      <div class="ac wide">
+        <input id="addr" value="1295 Montgomery Bell Rd, Wesley Chapel, FL 33543" placeholder="Street address, or start with the street name"
+          required role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addr-list" spellcheck="false">
+        <ul id="addr-list" class="ac-list" role="listbox" aria-label="Address suggestions" hidden></ul>
+      </div>
       <label for="list">List price</label>
       <input id="list" inputmode="numeric" placeholder="optional" class="narrow">
       <button type="submit">Value it</button>
@@ -34,6 +38,7 @@
   </footer>
 
   <script src="comps.js"></script>
+  <script src="addr.js"></script>
   <script src="value.js"></script>
 </body>
 </html>

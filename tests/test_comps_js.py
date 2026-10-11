@@ -176,3 +176,21 @@ def test_builder_closings_low_matches_python(built):
             found += 1
             assert js["value"] == pytest.approx(py["value"], rel=1e-9) and js["n"] == py["n"]
     assert found >= 1
+
+
+def test_autocomplete_number_with_partial_street_word():
+    """"4250 W": many streets match "W" equally; the ones that have a 4250 must come first,
+    and a street's own name beats its suffix (Warwick before ... Way)."""
+    streets = [[f"{n} WAY", {"33543": "100 102"}] for n in ["ACRE", "ARYA", "BRAE", "COLT", "FAWN", "GULF", "HATZ",
+                                                           "SKI", "ZULU", "ECHO", "ALFA", "OSLO", "KILO", "LIMA"]]
+    streets += [["WARWICK HILLS DRIVE", {"33543": "4248 4250"}], ["RUDDER WAY", {"33543": "4250"}],
+                ["WOOD TRAIL BOULEVARD", {"33544": "4250 4252"}]]
+    idx = {"cities": {"33543": "Wesley Chapel", "33544": "Wesley Chapel"}, "streets": sorted(streets)}
+    script = ("const A=require(process.argv[1]);const ix=A.prepare(JSON.parse(process.argv[2]));"
+              "console.log(JSON.stringify(JSON.parse(process.argv[3]).map(q=>A.search(q,ix,8).map(x=>x.label))));")
+    w, alone = json.loads(subprocess.run(["node", "-e", script, str(ROOT / "site" / "addr.js"), json.dumps(idx),
+                                          json.dumps(["4250 W", "4250"])], capture_output=True, text=True, check=True).stdout)
+    assert w[:2] == ["4250 Wood Trail Boulevard", "4250 Warwick Hills Drive"] or \
+        set(w[:2]) == {"4250 Wood Trail Boulevard", "4250 Warwick Hills Drive"}
+    assert w[2] == "4250 Rudder Way" and len(w) == 3                 # suffix match last; no numberless streets
+    assert set(alone) == {"4250 Warwick Hills Drive", "4250 Rudder Way", "4250 Wood Trail Boulevard"}

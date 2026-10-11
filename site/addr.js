@@ -92,10 +92,12 @@
       const partial = q.partialLast && i === q.words.length - 1;
       let best = null;
       for (const form of qw) {
-        for (const w of street.words) {
-          const c = wordCost(form, w, partial);
+        street.words.forEach((w, j) => {
+          let c = wordCost(form, w, partial);
+          // A partly typed word matches a street's own name before its suffix ("4250 W": Warwick before Rudder Way).
+          if (c != null && c > 0 && j > 0) c += 0.1;
           if (c != null && (best == null || c < best)) best = c;
-        }
+        });
       }
       if (best != null) { cost += best; matched++; return; }
       const w0 = qw[qw.length - 1];
@@ -127,7 +129,7 @@
   /** Suggestions for typed text: addresses when a house number is typed, otherwise streets. */
   function search(text, idx, limit = 8) {
     const q = parse(text, idx);
-    if (!q.words.length) return [];
+    if (!q.words.length) return q.number && q.number.length >= 3 ? numberOnly(q, idx, limit) : [];
     const scored = [];
     for (const s of idx.streets) {
       const r = scoreStreet(s, q, idx);
@@ -138,8 +140,10 @@
     const close = scored.filter((s) => s.cost <= scored[0].cost + 1.5).slice(0, 12);
 
     if (q.number) {
+      // Look for the number on every street that matches the words, not just the best few:
+      // "4250 W" matches hundreds of streets equally well, and only some have a 4250.
       const out = [];
-      for (const s of close) {
+      for (const s of scored.filter((x) => x.cost <= scored[0].cost + 1.5)) {
         for (const z of zipsFor(s.street, q, s.cityWords, idx)) {
           for (const n of numbers(s.street, z)) {
             const t = String(n);
@@ -155,8 +159,8 @@
       // No such house number. If the street is clear, offer the nearest numbers on it;
       // if the street is still ambiguous ("1295 Mont"), fall through to street names.
       const want = parseInt(q.number, 10);
-      const clear = close.filter((s) => s.cost <= close[0].cost + 0.1).length <= 2;
-      for (const s of clear ? close.slice(0, 2) : []) {
+      const clear = close.filter((s) => s.cost <= close[0].cost + 0.1).length === 1;
+      for (const s of clear ? close.slice(0, 1) : []) {
         for (const z of zipsFor(s.street, q, s.cityWords, idx)) {
           const nearest = numbers(s.street, z).slice().sort((a, b) => Math.abs(a - want) - Math.abs(b - want)).slice(0, 2);
           for (const n of nearest) out.push(addressItem(s.street, z, n, idx, s.cost + 1 + Math.abs(n - want) / 1e6, true));
@@ -185,6 +189,19 @@
       }
     }
     return out.slice(0, limit);
+  }
+
+  /** Just a house number ("4250"): that exact number on every street, nearest-alphabetical first. */
+  function numberOnly(q, idx, limit) {
+    const want = Number(q.number), out = [];
+    for (const s of idx.streets) {
+      for (const z of Object.keys(s.zips)) {
+        if (q.zip && z !== q.zip) continue;
+        if (numbers(s, z).includes(want)) out.push(addressItem(s, z, want, idx, 0));
+        if (out.length >= limit) return out;
+      }
+    }
+    return out;
   }
 
   const api = { prepare, search, parse, editDistance, title };

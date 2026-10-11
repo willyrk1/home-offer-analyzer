@@ -74,6 +74,7 @@ async function run(addressText) {
   state.opts = { includeDistressed: true, excluded: [], forced: [] };
   state.explain = null;
   state.builder = false; state.builderOwned = false;                  // per home: off by default
+  state.trendGroup = null;                                            // per home: pick the best-supported group
   Object.assign(offerIn, { dom: "", lot: "", cpsf: "", carry: "", months: "" });
   $("#status").textContent = "";
   history.replaceState(null, "", `#a=${encodeURIComponent(addressText)}`);
@@ -207,6 +208,8 @@ function render() {
 
       ${offerHtml(r, method)}
 
+      <section class="trend" id="trend"></section>
+
       <div class="controls">
         <label><input type="checkbox" id="opt-distressed" ${state.opts.includeDistressed ? "checked" : ""}> Include distressed sales (bank-owned, short sales) at half weight</label>
         <label><input type="checkbox" id="opt-math" ${state.showMath ? "checked" : ""}> Show the math for every comp</label>
@@ -234,6 +237,7 @@ function render() {
     </div>`;
 
   bindOffer(r, method);
+  renderTrend();
   bindUpload();
   box.querySelectorAll("[data-level]").forEach((b) => b.onclick = () => { state.level = b.dataset.level; render(); });
   box.querySelectorAll("input[name=method]").forEach((el) => el.onchange = () => { state.method = el.value; render(); });
@@ -434,6 +438,79 @@ function renderOffer(r, method) {
   if ($("#builder-out")) $("#builder-out").innerHTML = state.builder ? builderOut(p, list) : "";
   $("#market-out").innerHTML = marketHtml(list);
   $("#conc-out").innerHTML = concessionsHtml(p.target);
+}
+
+// ---------- local price trend from recorded sales (site/trend.js) ----------
+function trendFor(group) {
+  const { subject, tindex } = state.ctx;
+  return Trend.local(subject, allSales(), asOfDate(), group, tindex);
+}
+
+/** Default: the narrowest area with enough sales on both sides of the year-over-year check. */
+function renderTrend() {
+  const box = $("#trend");
+  if (!box) return;
+  const all = Object.fromEntries(Object.keys(Trend.GROUPS).map((g) => [g, trendFor(g)]));
+  const best = ["nbhd", "subdivision", "zip"].find((g) => all[g].yoy.enough) || "zip";
+  const g = state.trendGroup || best;
+  const tr = all[g], s = state.ctx.subject;
+  const name = { nbhd: s.nbhd_name || s.nbhd, subdivision: `plat ${s.subdivision}`, zip: s.zip };
+  const y = tr.yoy;
+  const span = (w) => {
+    const a = monthName(Trend.addMonths(w.from, 1).slice(0, 7)).split(" "), b = monthName(w.to.slice(0, 7)).split(" ");
+    return a[1] === b[1] ? `${a[0]}–${b[0]} ${b[1]}` : `${a.join(" ")} – ${b.join(" ")}`;
+  };
+  const head = y.enough
+    ? `Last ${Trend.YOY} months vs the same months a year earlier: price ÷ just value <b>${pct(y.ratio_pct)}</b>, $/sf ${pct(y.ppsf_pct)} (${y.now.n} vs ${y.before.n} sales).`
+    : `Too few sales for a year-over-year read (${y.now.n} in the last ${Trend.YOY} months, ${y.before.n} a year earlier; ${Trend.MIN_SALES} each needed).`;
+  const z = tr.zhvi && tr.zhvi.pct != null ? ` For comparison, the Zillow index for ${esc(s.zip)}: ${pct(tr.zhvi.pct)} over the year to ${monthName(tr.zhvi.month)}.` : "";
+  const label = tr.label[0].toUpperCase() + tr.label.slice(1);
+  box.innerHTML = `
+    <h3>Price trend</h3>
+    <div class="levels" role="group" aria-label="Trend area">${Object.entries(Trend.GROUPS).map(([k, v]) =>
+      `<button type="button" class="link${k === g ? " on" : ""}" data-trend="${k}" aria-pressed="${k === g}">${v.label}${k === best ? " (best)" : ""}</button>`).join("")}</div>
+    <p class="explain">${esc(label)}: ${esc(name[g])}. ${head}${z}</p>
+    ${trendChart(tr)}
+    <div class="table-scroll"><table class="trend-table">
+      <thead><tr><th>Sold</th><th class="num">Sales</th><th class="num">Median price</th><th class="num">$/sf</th><th class="num">÷ just value</th></tr></thead>
+      <tbody>${tr.windows.map((w) => `<tr${w.n < 5 ? ' class="thin"' : ""}><td>${span(w)}</td><td class="num">${w.n}</td><td class="num">${money(w.price)}</td>
+        <td class="num">${w.ppsf == null ? "—" : "$" + Math.round(w.ppsf)}</td><td class="num">${w.ratio == null ? "—" : w.ratio.toFixed(3)}</td></tr>`).join("")}</tbody>
+    </table></div>
+    <p class="explain">Pasco Property Appraiser sales (market sales only${uploadedSales().length ? ", plus your Redfin file" : ""}) through ${esc(asOfDate())}.
+      Price ÷ just value compares each sale with that house's current appraiser value, so it follows prices for the same homes whatever mix sold;
+      $/sf moves with the mix. Medians of a handful of sales jump around; faded rows have fewer than 5.
+      Listings aren't published by neighborhood, so price cuts and inventory stay ZIP-level (Market, above, and the market page).</p>`;
+  box.querySelectorAll("[data-trend]").forEach((b) => b.onclick = () => { state.trendGroup = b.dataset.trend; renderTrend(); });
+}
+
+/** Price ÷ just value by window vs the ZIP Zillow index, both = 100 at the oldest window with sales. */
+function trendChart(tr) {
+  const ws = [...tr.windows].reverse();
+  const zi = state.ctx.tindex[state.ctx.subject.zip] || [];
+  const at = (month) => { let v = null; for (const [m, x] of zi) { if (m <= month) v = x; else break; } return v; };
+  const pts = ws.map((w, k) => ({ k, a: w.n >= 3 ? w.ratio : null, b: at(w.to.slice(0, 7)) }));
+  const a0 = pts.find((p) => p.a != null);
+  if (!a0 || pts.filter((p) => p.a != null).length < 3) return "";
+  const base = a0.a, b0 = pts[a0.k].b;
+  for (const p of pts) { p.a = p.a == null ? null : (p.a / base) * 100; p.b = p.b == null || !b0 || p.k < a0.k ? null : (p.b / b0) * 100; }
+  const vals = pts.flatMap((p) => [p.a, p.b]).filter((v) => v != null);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = Math.max((hi - lo) * 0.1, 1); lo -= pad; hi += pad;
+  const W = 320, H = 150, L = 34, R = 8, T = 8, B = 20;
+  const x = (k) => L + (k / (pts.length - 1)) * (W - L - R);
+  const yy = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const line = (key) => pts.filter((p) => p[key] != null).map((p, i) => `${i ? "L" : "M"}${x(p.k).toFixed(1)},${yy(p[key]).toFixed(1)}`).join("");
+  const ticks = [lo + pad, (lo + hi) / 2, hi - pad];
+  return `<div class="chart trend-chart"><h3>Same-house prices vs the ZIP index <span class="explain">· 100 = ${monthName(Trend.addMonths(ws[a0.k].from, 1).slice(0, 7))}</span></h3>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Price over just value by quarter for the ${esc(tr.label)}, against the Zillow index for the ZIP">
+      ${ticks.map((t) => `<line class="gridline" x1="${L}" x2="${W - R}" y1="${yy(t)}" y2="${yy(t)}"/><text class="axis" x="${L - 4}" y="${yy(t) + 3}" text-anchor="end">${Math.round(t)}</text>`).join("")}
+      <path class="series" d="${line("a")}"/>
+      ${pts.filter((p) => p.a != null).map((p) => `<circle class="dot" cx="${x(p.k).toFixed(1)}" cy="${yy(p.a).toFixed(1)}" r="2.5"/>`).join("")}
+      <path class="series zip" d="${line("b")}"/>
+      <text class="axis" x="${L}" y="${H - 4}">${monthName(Trend.addMonths(ws[0].from, 1).slice(0, 7))}</text>
+      <text class="axis" x="${W - R}" y="${H - 4}" text-anchor="end">${monthName(ws[ws.length - 1].to.slice(0, 7))}</text>
+    </svg>
+    <div class="legend"><span class="key"></span> ${esc(tr.label)} sales, price ÷ just value <span class="key zip"></span> Zillow index, ${esc(state.ctx.subject.zip)}</div></div>`;
 }
 
 // ---------- builder floor (new construction; off by default, a reference line only) ----------

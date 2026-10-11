@@ -36,17 +36,27 @@ snapshots for future backtests) is committed by the workflow and can't be recrea
 
 ```bash
 pip install -r requirements.txt          # geopandas/pyogrio needed for the parcel map
-python -m pytest -q                      # 33 tests; JS parity tests need node
+python -m pytest -q                      # 46 tests (~1-2 min); JS tests need node
 python -m pipeline.build                 # market data (downloads ~few hundred MB)
 python -m pipeline.county_build          # Pasco (downloads ~800 MB incl. 684 MB map; ~10 min)
 python -m pipeline.county_build --offline --raw-dir raw/pasco   # reuse downloads
 python -m pipeline.comps_report "1295 Montgomery Bell Rd, Wesley Chapel, FL 33543"
 node tests/run_comps.js site/data pasco "<address>"            # browser engine, same data
-python -m pipeline.backtest [--sample 500]   # value last 12 months of sales as of the day before each
+python -m pipeline.backtest [--sample 500]   # ~9 min: last 12 months of sales, no look-ahead; writes
+                                         # backtest.json (methods, ranges, market_signals) the page reads
+python -m pipeline.tune [--sample 1000]  # ~1 h, 7 workers: settings search; prints, changes nothing
 python -m http.server -d site 8000       # preview
 # sample data, no downloads:
 python -m tests.fixtures raw-sample && python -m pipeline.build --raw-dir raw-sample --offline
 ```
+
+**This machine (Windows):** `python` isn't on PATH; use `.venv/Scripts/python` (venv from
+`py -3.11`). `.claude/launch.json` (untracked) serves `site/` on :8000 for the preview pane;
+after editing site files, reload with `fetch(url, {cache: "reload"})` or the browser serves
+stale JS/JSON. Long inline Python via bash heredocs mangled `` once: write patch scripts
+to the scratchpad instead. `gh` isn't authenticated; the repo is public, so check Actions
+runs with `curl https://api.github.com/repos/willyrk1/home-offer-analyzer/actions/runs`.
+Pushing to `main` runs the weekly workflow (tests, builds, backtest, deploy; ~17 min).
 
 Earlier sessions ran in a sandbox that couldn't reach Zillow/Redfin/Pasco, so real-data
 checks went through the `comps-report` and `probe-pasco` workflows, which write results
@@ -209,7 +219,8 @@ leverage.
 3. ~~County regression, comps, show-the-math, why-not-this-comp~~
 4. ~~Backtest + offer recommendation~~ — backtest, tuning (no gain), assessed/blend
    methods, calibrated ranges, measured (null) market leverage, offer + appraisal check +
-   concessions converter. Redfin "recently sold" upload done (step 2).
+   concessions converter, builder floor, address autocomplete with recents. All live.
+   **Next: step 5 or 6 — ask Bill which.**
 5. Own ZIP forecast model (leading indicators, trained 2012–present incl. 2022–23),
    backtest vs Zillow using `data/archive/`, accuracy-weighted blend, show as a range.
    Also: FAU-style "above long-term trend %" per ZIP (Bill asked; show trend start date).

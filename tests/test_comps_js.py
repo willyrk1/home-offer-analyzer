@@ -92,6 +92,8 @@ def test_export_files_and_privacy(built):
     streets = json.loads((base / "streets.json").read_text())
     assert "33544" in streets["MONTGOMERY BELL ROAD"]   # the subject's ZIP in the sample data
     assert json.loads((base / "neighbors.json").read_text())["33543"] == ["33543", "33544"]
+    nbhds = json.loads((base / "nbhds.json").read_text())
+    assert nbhds and all(set(v) == {"name", "zips", "parcels"} and v["zips"] for v in nbhds.values())
 
 
 def test_explain_non_market_sale(built):

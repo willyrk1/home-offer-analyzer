@@ -57,6 +57,7 @@ async function init() {
     renderTable();
   }));
   window.addEventListener("hashchange", fromHash);
+  bindNeighborhoods();
 
   renderTable();
   fromHash();
@@ -65,6 +66,109 @@ async function init() {
 function fromHash() {
   const z = location.hash.replace("#", "");
   if (/^\d{5}$/.test(z)) { $("#zip-input").value = z; showZip(z); }
+  const n = /^n=(.+)$/.exec(z);
+  if (n) { const name = decodeURIComponent(n[1]); $("#nb-input").value = name; showNeighborhood(name); }
+}
+
+// ---------- neighborhood lookup (county appraiser neighborhoods; site/trend.js) ----------
+const COUNTY = "pasco";                       // the counties with sale records (more to come)
+const cbase = `data/counties/${COUNTY}/`;
+const nb = { data: null, items: [], active: -1 };
+
+async function loadCounty() {
+  if (nb.data) return nb.data;
+  const [nbhds, meta, tindex, trend] = await Promise.all(["nbhds.json", "meta.json", "tindex.json", "nbhd_trend.json"]
+    .map((f) => getJSON(cbase + f).catch(() => null)));
+  if (!nbhds || !meta) throw new Error("county data missing");
+  nb.data = { nbhds, meta, tindex: tindex || {}, trend: trend && trend.nbhds, sales: new Map() };
+  return nb.data;
+}
+
+function fromTable(t) {
+  return t.rows.map((r) => Object.fromEntries(t.cols.map((c, i) => [c, r[i]])));
+}
+
+async function salesFor(zips) {
+  const d = nb.data;
+  await Promise.all(zips.filter((z) => !d.sales.has(z)).map(async (z) =>
+    d.sales.set(z, await getJSON(`${cbase}sales/${z}.json`).then(fromTable).catch(() => []))));
+  return zips.flatMap((z) => d.sales.get(z));
+}
+
+function bindNeighborhoods() {
+  const input = $("#nb-input"), list = $("#nb-list");
+  const close = () => { list.hidden = true; input.setAttribute("aria-expanded", "false"); nb.active = -1; };
+  const show = () => {
+    if (!nb.items.length) return close();
+    list.innerHTML = nb.items.map((h, i) => `<li role="option" id="nb-${i}" data-i="${i}" aria-selected="${i === nb.active}">
+      <span class="main">${esc(h.name)}</span><span class="tag">${esc(h.zips.join(", "))} · ${h.parcels.toLocaleString()} parcels</span></li>`).join("");
+    list.hidden = false; input.setAttribute("aria-expanded", "true");
+  };
+  const choose = (h) => { input.value = h.name; close(); location.hash = "n=" + encodeURIComponent(h.name); };
+  input.addEventListener("input", async () => {
+    try { await loadCounty(); } catch { $("#nb-status").textContent = "Neighborhood data isn't published yet."; return; }
+    nb.items = Trend.findNeighborhoods(input.value, nb.data.nbhds); nb.active = -1; show();
+  });
+  input.addEventListener("keydown", (e) => {
+    if (list.hidden) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      nb.active = (nb.active + (e.key === "ArrowDown" ? 1 : -1) + nb.items.length) % nb.items.length; show();
+      input.setAttribute("aria-activedescendant", `nb-${nb.active}`);
+    } else if (e.key === "Enter" && nb.active >= 0) { e.preventDefault(); choose(nb.items[nb.active]); }
+    else if (e.key === "Escape") close();
+  });
+  list.addEventListener("mousedown", (e) => {
+    const li = e.target.closest("li[data-i]");
+    if (li) { e.preventDefault(); choose(nb.items[+li.dataset.i]); }
+  });
+  input.addEventListener("blur", () => setTimeout(close, 100));
+  $("#nb-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = input.value.trim();
+    if (!v) return;
+    if (location.hash === "#n=" + encodeURIComponent(v)) showNeighborhood(v); else location.hash = "n=" + encodeURIComponent(v);
+  });
+}
+
+async function showNeighborhood(text) {
+  const box = $("#detail"), status = $("#nb-status");
+  let d;
+  try { d = await loadCounty(); } catch { status.textContent = "Neighborhood data isn't published yet. The weekly build creates it."; return; }
+  const hits = Trend.findNeighborhoods(text, d.nbhds);
+  const exact = hits.find((h) => h.name.toUpperCase() === text.trim().toUpperCase());
+  const h = exact || (hits.length === 1 ? hits[0] : null);
+  if (!h) {
+    status.innerHTML = hits.length
+      ? `Several neighborhoods match: ${hits.map((x) => `<a href="#n=${encodeURIComponent(x.name)}">${esc(x.name)}</a>`).join(", ")}.`
+      : `No Pasco appraiser neighborhood matches “${esc(text)}”. Try part of the name, or value an address in it.`;
+    return;
+  }
+  status.textContent = "Loading sales…";
+  const sales = await salesFor(h.zips);
+  status.textContent = "";
+  const codes = new Set(h.codes), zip = h.zips[0];
+  const tr = Trend.local({ zip }, sales, d.meta.latest_sale, "nbhd", d.tindex, (s) => codes.has(s.nbhd));
+  const rel = h.codes.map((c) => d.trend && d.trend[c] ? [c, d.trend[c]] : null).filter(Boolean);
+  const relText = rel.length
+    ? `Over the last 24 months, same-house prices here moved ${rel.map(([c, t]) => `${pct(Math.expm1(t.slope) * 100)} a year` +
+        (rel.length > 1 ? ` (${esc(c)})` : "") + ` relative to the ${esc(zip)} index, from ${t.n} sales`).join("; ")}
+        (measured, then pulled toward 0 by how scattered the sales are; when valuing a home this is an option, off by default, because it didn't improve past valuations).`
+    : `Too few sales over 24 months for a trend relative to the ZIP index.`;
+  const zrec = state.index && state.index.zips.find((z) => z.zip === zip);
+  const zipText = zrec ? `ZIP ${zip} overall: typical value ${pct(zrec.zhvi_yoy_pct)} over a year, Zillow forecast ${pct(zrec.forecast_12m_pct)} for the next 12 months,
+    ${zrec.price_drops_pct == null ? "" : zrec.price_drops_pct.toFixed(0) + "% of listings with a price cut, "}inventory ${pct(zrec.inventory_yoy_pct, 0)} vs last year; read: ${esc(zrec.verdict)}.` : "";
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="detail-head">
+      <div><h2>${esc(h.name)}</h2><span class="place">Pasco appraiser neighborhood ${esc(h.codes.join(", "))} · ZIP ${esc(h.zips.join(", "))} · ${h.parcels.toLocaleString()} parcels</span></div>
+    </div>
+    <h3>Sale-price trend</h3>
+    ${Trend.html(tr, { name: h.name, zip, tindex: d.tindex })}
+    <p class="explain">${relText}</p>
+    ${zipText ? `<h3>Market around it</h3><p class="explain">${zipText} <a href="#${esc(zip)}">Listings, price cuts and days on market for ${esc(zip)}</a>.</p>` : ""}
+    <p class="explain"><a href="value.html">Value a home in ${esc(h.name)}</a> to see its comps and offer range.</p>`;
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // ---------- overview table ----------

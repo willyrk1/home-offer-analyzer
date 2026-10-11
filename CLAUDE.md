@@ -36,7 +36,7 @@ snapshots for future backtests) is committed by the workflow and can't be recrea
 
 ```bash
 pip install -r requirements.txt          # geopandas/pyogrio needed for the parcel map
-python -m pytest -q                      # 52 tests (~1-2 min); JS tests need node
+python -m pytest -q                      # 53 tests (~1-2 min); JS tests need node
 python -m pipeline.build                 # market data (downloads ~few hundred MB)
 python -m pipeline.county_build          # Pasco (downloads ~800 MB incl. 684 MB map; ~10 min)
 python -m pipeline.county_build --offline --raw-dir raw/pasco   # reuse downloads
@@ -199,7 +199,9 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
   comps 9.45% -> 9.39%, blend (2026) 8.76% -> 8.67%; held on odd and even months. 1.5 mi 9.41%, 2 mi 9.43%.
 - **Price trend** (`site/trend.js`, value page): 3-month medians of price, $/sf and price / current just
   value (mix-free) for the subject's neighborhood, subdivision or ZIP, YoY on the same 6 months, charted
-  vs the ZIP ZHVI. Lexington Oaks fell ~5% YoY vs ZHVI -0.9%; using that in the time adjustment was
+  vs the ZIP ZHVI. Also on the market page as a neighborhood lookup (`index.html#n=<name>`; names from
+  `nbhds.json`, codes sharing a name merged, typo-tolerant; Bill asked "market trend of Country Walk").
+  Lexington Oaks fell ~5% YoY vs ZHVI -0.9%; using that in the time adjustment was
   tested (next item) and didn't help.
 - **Neighborhood trend** (`comps.neighborhood_trends`, `LOCAL_TREND`; `nbhd_trend.json`; page toggle
   "Bring comp prices to today with"): per appraiser neighborhood, slope over 24 months of

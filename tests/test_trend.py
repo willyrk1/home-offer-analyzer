@@ -39,6 +39,26 @@ def test_windows_and_year_over_year():
     assert y["enough"] and (y["now"]["n"], y["before"]["n"]) == (12, 12)
     assert y["ratio_pct"] == pytest.approx((1.1 / 1.2 - 1) * 100)
     assert t["zhvi"]["pct"] == pytest.approx(-5) and t["zhvi"]["month"] == "2026-09"
+    # Index a month behind the sales: compare its latest month with that month a year earlier.
+    t = js("T.local(D.subject, D.sales, '2026-09-29', 'nbhd', D.tindex)",
+           {"subject": SUBJECT, "sales": sales, "tindex": {"33544": [["2025-08", 100], ["2025-09", 99], ["2026-08", 97]]}})
+    assert t["zhvi"]["pct"] == pytest.approx(-3) and t["zhvi"]["month"] == "2026-08"
+
+
+def test_neighborhood_lookup():
+    nbhds = {"CNWK": {"name": "Country Walk", "zips": ["33543"], "parcels": 878},
+             "HELK": {"name": "Heritage Lake", "zips": ["34655"], "parcels": 448},
+             "HRLK": {"name": "Heritage Lake", "zips": ["34655", "34654"], "parcels": 96},
+             "WLKR": {"name": "Walker Estates", "zips": ["33544"], "parcels": 50},
+             "NONE": {"name": None, "zips": ["33544"], "parcels": 5}}
+    names = js("['cuntry wal', 'walk country', 'CNWK', 'heritage', 'walk', 'xyz'].map(q => T.findNeighborhoods(q, D))", nbhds)
+    assert [h["name"] for h in names[0]] == ["Country Walk"]          # typo + partial word
+    assert [h["name"] for h in names[1]] == ["Country Walk"]          # any word order
+    assert [h["name"] for h in names[2]] == ["Country Walk"]          # appraiser code
+    assert names[3][0]["codes"] == ["HELK", "HRLK"] and names[3][0]["parcels"] == 544   # same name merged
+    assert sorted(names[3][0]["zips"]) == ["34654", "34655"]
+    assert [h["name"] for h in names[4]] == ["Country Walk", "Walker Estates"]          # bigger first
+    assert names[5] == []
 
 
 def test_too_few_sales_and_other_groups():

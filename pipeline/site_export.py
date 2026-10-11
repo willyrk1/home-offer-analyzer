@@ -80,6 +80,17 @@ def zip_neighbors(parcels: pd.DataFrame, miles: float = NEIGHBOR_MILES) -> dict[
     return out
 
 
+def neighborhood_index(p: pd.DataFrame) -> dict:
+    """Appraiser neighborhoods for the market page's lookup: {code: {name, zips (most parcels first), parcels}}."""
+    out = {}
+    for code, g in p[p["nbhd"].notna()].groupby("nbhd", sort=True):
+        names = g["nbhd_name"].dropna()
+        out[code] = {"name": str(names.mode().iat[0]) if len(names) else None,
+                     "zips": [str(z) for z in g["zip"].value_counts().index],
+                     "parcels": int(len(g))}
+    return out
+
+
 def address_index(p: pd.DataFrame) -> dict:
     """{"cities": {zip: city}, "streets": [[street, {zip: "12 14 101"}], ...]}: compact for autocomplete."""
     cities = p.groupby("zip")["city"].agg(lambda c: c.mode().iat[0] if c.notna().any() else "").to_dict()
@@ -116,6 +127,7 @@ def export_county(name: str, parcels: pd.DataFrame, sales_all: pd.DataFrame, mod
     _write(out / "streets.json", {k: sorted(v) for k, v in sorted(streets.items())})
     _write(out / "addresses.json", address_index(p))
     _write(out / "neighbors.json", zip_neighbors(p))
+    _write(out / "nbhds.json", neighborhood_index(p))
     _write(out / "tindex.json", {z: zip_series[z] for z in sorted(zip_series) if zip_series[z]})
     _write(out / "model.json", model)
     # Neighborhood trends vs the ZIP index as of the latest sale; the page applies them (or not) to comps.

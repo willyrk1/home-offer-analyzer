@@ -11,7 +11,7 @@
     <div class="wrap">
       <nav class="nav"><a href="index.html" aria-current="page">Market trends</a><a href="value.html">Value a home</a></nav>
       <h1>Home Offer Analyzer</h1>
-      <p class="sub">ZIP-level market trends: where buyer leverage is building, measured against the same month a year earlier.</p>
+      <p class="sub">Market trends by ZIP, and sale-price trends by neighborhood: where buyer leverage is building, measured against the same months a year earlier.</p>
     </div>
   </header>
 
@@ -22,6 +22,16 @@
       <datalist id="zip-options"></datalist>
       <select id="county-filter" aria-label="Filter by county"><option value="">All counties</option></select>
     </section>
+    <form class="picker" id="nb-form" aria-label="Look up a neighborhood" autocomplete="off">
+      <label for="nb-input">Neighborhood</label>
+      <div class="ac wide">
+        <input id="nb-input" placeholder="e.g. Country Walk (Pasco)" role="combobox" aria-autocomplete="list"
+          aria-expanded="false" aria-controls="nb-list">
+        <ul id="nb-list" class="ac-list" role="listbox" aria-label="Neighborhoods" hidden></ul>
+      </div>
+      <button type="submit">Show trend</button>
+    </form>
+    <p id="nb-status" class="explain" role="status"></p>
 
     <section id="detail" class="detail" hidden></section>
 
@@ -53,6 +63,7 @@
     <p>Data: Zillow Research (home value index and forecast), the Redfin Data Center (ZIP market tracker, rolling 90-day windows) and Realtor.com Research (monthly ZIP listing data). Not an appraisal or financial advice.</p>
   </footer>
 
+  <script src="trend.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

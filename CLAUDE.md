@@ -175,6 +175,14 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
   1,057 Pasco builder closings came in at or above that level set by earlier ones (resales
   vs the same kind of level: 82%), so it's soft. Spec example (220 Hollow Rd, Cleveland TN):
   $60K + 2,314 sf × $140 = $384K × 1.15 = $442K.
+- **Redfin "recently sold" CSV** (`site/upload.js`, value page): fills the weeks before
+  closings reach county records. MLS data, so it never leaves the viewer's browser (kept in
+  localStorage, removable; a test checks upload.js makes no network calls; `*redfin*.csv`
+  is gitignored). Rows match a parcel by normalized address + ZIP and use the *county's*
+  features; skipped with a reason if not a sale, no parcel, several units at one address,
+  or already recorded (same parcel within 45 days). Added sales count as market sales and
+  move "as of" to the newest one (invariant 2). Redfin's "local MLS rules" footnote row is
+  ignored. JS only: the Python report doesn't read uploads.
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.
@@ -197,12 +205,11 @@ leverage.
 ## Next steps (spec build order)
 
 1. ~~Market-only mode~~
-2. ~~Pasco sales adapter + sale classification~~ — Redfin "recently sold" CSV upload
-   (fills the weeks before sales hit county records) still to do
+2. ~~Pasco sales adapter + sale classification~~, ~~Redfin "recently sold" CSV upload~~
 3. ~~County regression, comps, show-the-math, why-not-this-comp~~
 4. ~~Backtest + offer recommendation~~ — backtest, tuning (no gain), assessed/blend
    methods, calibrated ranges, measured (null) market leverage, offer + appraisal check +
-   concessions converter. Still open: Redfin "recently sold" CSV upload (step 2).
+   concessions converter. Redfin "recently sold" upload done (step 2).
 5. Own ZIP forecast model (leading indicators, trained 2012–present incl. 2022–23),
    backtest vs Zillow using `data/archive/`, accuracy-weighted blend, show as a range.
    Also: FAU-style "above long-term trend %" per ZIP (Bill asked; show trend start date).

@@ -80,7 +80,7 @@ tests/                   synthetic fixtures in the providers' real formats, and 
 ## Next steps (from the spec)
 
 1. ~~Market-only mode~~
-2. ~~Pasco sales adapter and sale classification~~ (Redfin recent-sales upload still to do)
+2. ~~Pasco sales adapter and sale classification~~, ~~Redfin recent-sales upload (stays in your browser)~~
 3. ~~County regression, comp selection, "show the math", "why not this comp"~~
 4. Leverage table and offer recommendation; backtest across many sales
 5. Own forecast model, backtests, forecast blend

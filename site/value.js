@@ -82,15 +82,86 @@ async function run(addressText) {
 }
 
 function compute() {
-  const { subject, sales, model, tindex, meta } = state.ctx;
-  return Comps.valueSubject(subject, sales, model, tindex, { ...state.opts, asOf: meta.latest_sale });
+  const { subject, model, tindex } = state.ctx;
+  return Comps.valueSubject(subject, allSales(), model, tindex, { ...state.opts, asOf: asOfDate() });
+}
+
+// ---------- your Redfin "recently sold" file (site/upload.js): this browser only, never published ----------
+const UPLOAD_KEY = "hoa:redfin:" + COUNTY;
+let uploaded = (() => { try { return JSON.parse(localStorage.getItem(UPLOAD_KEY)); } catch { return null; } })();
+const uploadedSales = () => (uploaded && uploaded.added) || [];
+const allSales = () => state.ctx.sales.concat(uploadedSales());
+/** "As of" = the newest market sale, county-recorded or from your file (CLAUDE.md invariant 2). */
+function asOfDate() {
+  let d = state.ctx ? state.ctx.meta.latest_sale : null;
+  for (const s of uploadedSales()) if (!d || s.date > d) d = s.date;
+  return d;
+}
+
+async function addRedfinFile(file) {
+  const common = await loadCommon();
+  const parsed = Upload.parseRedfin(await file.text());
+  if (parsed.error) return { error: parsed.error };
+  const zips = [...new Set(parsed.sales.map((s) => s.zip).filter((z) => common.meta.zips.includes(z)))];
+  const [parcels, recorded] = await Promise.all([
+    Promise.all(zips.map((z) => getJSON(`parcels/${z}.json`).then(Comps.fromTable))),
+    Promise.all(zips.map((z) => getJSON(`sales/${z}.json`).then(Comps.fromTable).catch(() => []))),
+  ]);
+  const index = Upload.indexParcels(Object.fromEntries(zips.map((z, i) => [z, parcels[i]])));
+  const out = Upload.toComps(parsed, index, recorded.flat());
+  // Merge with what's already stored: a newer file replaces rows for the same sale.
+  const keep = uploadedSales().filter((s) => !out.added.some((a) => a.parcel_id === s.parcel_id && a.date === s.date));
+  uploaded = { added: keep.concat(out.added), skipped: out.skipped, file: file.name,
+    at: new Date().toISOString().slice(0, 10), last_added: out.added.length };
+  try { localStorage.setItem(UPLOAD_KEY, JSON.stringify(uploaded)); }
+  catch { return { ...out, warning: "Your browser didn't let us save the file, so it will be gone after a reload." }; }
+  return out;
+}
+
+function forgetRedfin() {
+  uploaded = null;
+  try { localStorage.removeItem(UPLOAD_KEY); } catch { /* storage off */ }
+}
+
+function uploadHtml() {
+  const n = uploadedSales().length;
+  const last = n ? uploadedSales().reduce((a, s) => (s.date > a ? s.date : a), "") : null;
+  const sk = (uploaded && uploaded.skipped) || [];
+  return `
+    <h3>Recent sales not in county records yet</h3>
+    <p class="explain">County records run through ${esc(state.ctx.meta.latest_sale)} and lag closings by a few weeks. To add newer sales, on Redfin
+      search the area, filter to <em>Sold</em> (last 1–3 months), then <em>Download All</em> under the results, and add the file here.
+      It stays in this browser: it isn't uploaded anywhere or published (it's MLS data, which isn't ours to share).</p>
+    <div class="picker small">
+      <label for="redfin-file">Redfin CSV</label><input type="file" id="redfin-file" accept=".csv,text/csv">
+      ${n ? `<button type="button" class="link" id="redfin-forget">Remove the ${n} added sales</button>` : ""}
+    </div>
+    <div id="redfin-out" role="status">${n ? `<p class="explain">Using ${n} sales from ${esc(uploaded.file)} (through ${esc(last)}),
+      marked "from your Redfin file" in the comps. Values are as of ${esc(asOfDate())}.</p>` : ""}
+      ${sk.length ? `<details><summary class="explain">${sk.length} rows from the last file weren't used</summary><ul class="explain">${sk.slice(0, 50).map((s) =>
+        `<li>${esc(s.address || "line " + s.line)}: ${esc(s.reason)}</li>`).join("")}${sk.length > 50 ? `<li>…and ${sk.length - 50} more</li>` : ""}</ul></details>` : ""}</div>`;
+}
+
+function bindUpload() {
+  const f = $("#redfin-file");
+  if (!f) return;
+  f.onchange = async () => {
+    if (!f.files[0]) return;
+    $("#redfin-out").innerHTML = `<p class="explain">Reading ${esc(f.files[0].name)}…</p>`;
+    const out = await addRedfinFile(f.files[0]);
+    if (out.error) { $("#redfin-out").innerHTML = `<p class="explain warn">${esc(out.error)}</p>`; return; }
+    render();
+    if (out.warning) $("#redfin-out").insertAdjacentHTML("afterbegin", `<p class="explain warn">${esc(out.warning)}</p>`);
+  };
+  const forget = $("#redfin-forget");
+  if (forget) forget.onclick = () => { forgetRedfin(); render(); };
 }
 
 function modelNote(c) {
   const m = c.model;
   return `County model: ${m.n_sales.toLocaleString()} market sales (${m.window[0]} to ${m.window[1]}), ` +
     `explains ${(m.r2 * 100).toFixed(0)}% of price variation; typical single-house miss before comps ${m.median_abs_pct_error.toFixed(0)}%. ` +
-    `Sales recorded through ${c.meta.latest_sale}.`;
+    `Sales recorded through ${c.meta.latest_sale}` + (uploadedSales().length ? `, plus ${uploadedSales().length} from your Redfin file.` : ".");
 }
 
 // ---------- render ----------
@@ -101,6 +172,7 @@ function render() {
   const box = $("#result");
   box.hidden = false;
 
+  $("#model-note").textContent = modelNote(state.ctx);
   const method = chosenMethod(r);
   const m = r.methods[method];
   const fair = m.fair_value;
@@ -151,6 +223,8 @@ function render() {
       ${state.opts.excluded.length ? `<p class="explain">Removed by you: ${state.opts.excluded.map((id) =>
         `<button class="link" data-restore="${esc(id)}">${esc(addressOf(id))} ↺</button>`).join(" ")}</p>` : ""}
 
+      ${uploadHtml()}
+
       <h3>Why wasn't a sale used?</h3>
       <form id="why" class="picker">
         <input id="why-addr" class="wide" placeholder="Address of a sale you'd expect to see">
@@ -160,6 +234,7 @@ function render() {
     </div>`;
 
   bindOffer(r, method);
+  bindUpload();
   box.querySelectorAll("[data-level]").forEach((b) => b.onclick = () => { state.level = b.dataset.level; render(); });
   box.querySelectorAll("input[name=method]").forEach((el) => el.onchange = () => { state.method = el.value; render(); });
   $("#opt-distressed").onchange = (e) => { state.opts.includeDistressed = e.target.checked; render(); };
@@ -364,7 +439,7 @@ function renderOffer(r, method) {
 // ---------- builder floor (new construction; off by default, a reference line only) ----------
 function builderHtml() {
   const { subject, meta } = state.ctx;
-  const isNew = Comps.looksNew(subject, meta.latest_sale);
+  const isNew = Comps.looksNew(subject, asOfDate());
   if (!isNew && !state.builderOwned) {
     return `<p class="explain"><button type="button" class="link" id="b-owned">Builder-owned spec home?</button> Show a builder floor.</p>`;
   }
@@ -424,7 +499,7 @@ function builderOut(p, list) {
     if (f.carry) out.push(`<p class="explain">Unsold inventory costs the builder every month, which is why their margin tends to shrink the longer a home sits.</p>`);
   }
   // What the recorded sales say about builders in this community (context, measured).
-  const low = Comps.builderClosingsLow(s, state.ctx.sales, state.ctx.meta.latest_sale);
+  const low = Comps.builderClosingsLow(s, allSales(), asOfDate());
   const chk = state.ctx.meta.summary && state.ctx.meta.summary.builder_floor_check;
   if (low) {
     out.push(`<p class="explain">From recorded sales: the last ${low.n} builder closings in this subdivision (6 months) went as low as $${low.ppsf.toFixed(0)}/sq ft
@@ -483,7 +558,7 @@ function concessionsHtml(price) {
 }
 
 function addressOf(parcelId) {
-  const s = state.ctx.sales.find((x) => x.parcel_id === parcelId);
+  const s = allSales().find((x) => x.parcel_id === parcelId);
   return s ? s.address : parcelId;
 }
 
@@ -503,7 +578,8 @@ function compRow(c, i) {
         <tr><td colspan="3" class="explain">Weight ${c.weight.toFixed(2)} = similarity ${c.similarity.toFixed(2)} ÷ (1 + ${(c.gross_pct / 100).toFixed(3)} gross)${c.sale_class === "distressed" ? " × 0.5 distressed" : ""}</td></tr>
       </table></td></tr>`;
   return `<tr class="comp">
-      <td class="addr" data-label="">${esc(c.address)}${c.subdivision === state.ctx.subject.subdivision ? ' <span class="tag-sm">same subdivision</span>' : ""}${flags}</td>
+      <td class="addr" data-label="">${esc(c.address)}${c.subdivision === state.ctx.subject.subdivision ? ' <span class="tag-sm">same subdivision</span>' : ""}${
+        c.source === "redfin_upload" ? ` <span class="tag-sm">from your Redfin file</span>${c.note ? `<div class="flags">${esc(c.note)}</div>` : ""}` : ""}${flags}</td>
       <td data-label="Sold">${esc(c.date)}</td><td class="num" data-label="Price">${money(c.price)}</td>
       <td class="num" data-label="Distance">${c.distance_mi.toFixed(2)} mi</td><td class="num" data-label="Sq ft">${Math.round(c.sqft).toLocaleString()}</td>
       <td class="num" data-label="Built">${c.year_built ?? "—"}</td><td class="num" data-label="Baths">${c.baths ?? "—"}</td><td data-label="Pool">${c.pool ? "yes" : "no"}</td>
@@ -529,9 +605,9 @@ function describeDiff(a, c) {
 }
 
 function runExplain(text, r) {
-  const { subject, sales, model, tindex } = state.ctx;
+  const { subject, model, tindex } = state.ctx;
   const key = Comps.normalizeAddress(String(text).split(",")[0]);
-  state.explain = Comps.explain(key, subject, sales, model, tindex, r, state.opts);
+  state.explain = Comps.explain(key, subject, allSales(), model, tindex, r, state.opts);
   $("#why-out").innerHTML = explainHtml(state.explain, r);
   const add = $("#force-add");
   if (add) add.onclick = () => {

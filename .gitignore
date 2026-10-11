@@ -12,3 +12,7 @@ __pycache__/
 
 # County build working files (large; rebuilt each run)
 work/
+
+# Redfin/MLS downloads: licensed data, never commit or publish (CLAUDE.md invariant 3)
+*redfin*.csv
+*Redfin*.csv

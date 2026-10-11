@@ -7,6 +7,7 @@
   const MIN_COMPS = 6, MAX_COMPS = 8;
   const SEARCH = [[0.5, 6], [1.0, 6], [1.0, 9], [2.0, 9], [2.0, 12], [3.0, 12], [5.0, 18]];
   const DISTRESSED_WEIGHT = 0.5, NET_LIMIT = 15, GROSS_LIMIT = 25, SIZE_LIMIT = 0.35;
+  const NBHD_REACH = 1.0;   // miles: same-neighborhood sales this close join every smaller ring (comps.NBHD_REACH)
   // Similarity penalty per unit of difference; same table as SIM in pipeline/comps.py.
   const SIM = { size: 1.0, age: 0.6, lot: 0.3, baths: 0.4, pool: 1.0, dist: 0.8, months: 0.5,
     same_nbhd: 0.3, same_subdivision: 0.4 };
@@ -168,7 +169,9 @@
   }
 
   function searchSteps(subject, located) {
-    if (located) return SEARCH.map(([r, m]) => ({ label: `within ${r} mi`, test: (s) => s.distance_mi <= r, months: m }));
+    if (located) return SEARCH.map(([r, m]) => ({
+      label: `within ${r.toFixed(1)} mi` + (NBHD_REACH > r ? ` (${NBHD_REACH.toFixed(1)} mi in the same neighborhood)` : ""),
+      test: (s) => s.distance_mi <= r || (s.nbhd === subject.nbhd && s.distance_mi <= NBHD_REACH), months: m }));
     const areas = [["subdivision", (s) => s.subdivision === subject.subdivision],
       ["neighborhood", (s) => s.nbhd === subject.nbhd], ["ZIP", (s) => s.zip === subject.zip]];
     return areas.flatMap(([label, test]) => [6, 12, 18].map((m) => ({ label: `same ${label}`, test, months: m })));
@@ -321,9 +324,8 @@
     const located = result.search.located && isNum(sale.lat) && isNum(subject.lat);
     const [withD] = withDistance([sale], subject, located);
     const cutoff = addMonths(asOf, -result.search.months);
-    const areaOk = located
-      ? withD.distance_mi <= parseFloat(result.search.area.replace(/[^\d.]/g, ""))
-      : searchSteps(subject, false).find((s) => s.label === result.search.area).test(sale);
+    const step = searchSteps(subject, result.search.located).find((s) => s.label === result.search.area);
+    const areaOk = !step || step.test(withD);
     if (!areaOk) reasons.push(located ? `It's ${withD.distance_mi.toFixed(2)} mi away; the search found enough comps ${result.search.area}.`
       : `It's outside the search area (${result.search.area}).`);
     if (!(parseDate(sale.date) > cutoff)) reasons.push(`It sold ${sale.date}, before the ${result.search.months}-month window.`);

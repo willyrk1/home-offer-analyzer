@@ -29,6 +29,8 @@ SEARCH = [  # (radius in miles, months back)
     (0.5, 6), (1.0, 6), (1.0, 9), (2.0, 9), (2.0, 12), (3.0, 12), (5.0, 18),
 ]
 DISTRESSED_WEIGHT = 0.5
+NBHD_REACH = 1.0        # miles: same-appraiser-neighborhood sales this close join every smaller ring
+                        # (backtest: comps 9.45% -> 9.39%, blend 8.76% -> 8.67%, both halves; 1.5 mi 9.41, 2 mi 9.43)
 NET_LIMIT, GROSS_LIMIT = 0.15, 0.25
 METHODS = ["comps", "assessed", "blend"]
 JV_MIN_COMPS = 3        # comps with a usable just value needed for the assessed method
@@ -98,6 +100,10 @@ def _subject_frame(subject: pd.Series) -> pd.DataFrame:
         "stories": _f(subject["stories"], 1.0), "quality": _f(subject["quality"], 4.0),
         "pool": bool(subject["pool"]) if pd.notna(subject["pool"]) else False,
     }])
+
+
+def _ring_label(r: float) -> str:
+    return f"within {r} mi" + (f" ({NBHD_REACH} mi in the same neighborhood)" if NBHD_REACH > r else "")
 
 
 def _similarity(c: pd.DataFrame, subj: pd.Series, as_of: pd.Timestamp) -> pd.Series:
@@ -211,7 +217,9 @@ def value_subject(subject: pd.Series, sales: pd.DataFrame, model: dict, tindex: 
     if located:
         pool = pool[pool["lat"].notna()]
         pool = pool.assign(distance_mi=haversine_miles(subject["lat"], subject["lon"], pool["lat"], pool["lon"]))
-        steps = [(f"within {r} mi", pool["distance_mi"] <= r, m) for r, m in SEARCH]
+        same_nb = pool["nbhd"] == subject["nbhd"]
+        steps = [(_ring_label(r), (pool["distance_mi"] <= r) | (same_nb & (pool["distance_mi"] <= NBHD_REACH)), m)
+                 for r, m in SEARCH]
     else:
         # No coordinates: same subdivision, then appraiser neighborhood, then ZIP.
         pool = pool.assign(distance_mi=np.where(pool["subdivision"] == subject["subdivision"], 0.25,

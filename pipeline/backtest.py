@@ -63,14 +63,14 @@ def _nearby(pool: pd.DataFrame, subject: pd.Series) -> pd.DataFrame:
 @contextmanager
 def settings(config: dict | None):
     """Temporarily override comps-engine settings: SIM weights by name, plus MIN_COMPS,
-    MAX_COMPS, DISTRESSED_WEIGHT and search_scale (multiplies every search radius)."""
+    MAX_COMPS, DISTRESSED_WEIGHT, NBHD_REACH and search_scale (multiplies every search radius)."""
     config = config or {}
-    saved = (dict(comps.SIM), comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, list(comps.SEARCH))
+    saved = (dict(comps.SIM), comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, list(comps.SEARCH), comps.NBHD_REACH)
     try:
         for k, v in config.items():
             if k in comps.SIM:
                 comps.SIM[k] = v
-            elif k in ("MIN_COMPS", "MAX_COMPS", "DISTRESSED_WEIGHT"):
+            elif k in ("MIN_COMPS", "MAX_COMPS", "DISTRESSED_WEIGHT", "NBHD_REACH"):
                 setattr(comps, k, v)
             elif k == "search_scale":
                 comps.SEARCH = [(round(r * v, 3), m) for r, m in saved[4]]
@@ -79,7 +79,7 @@ def settings(config: dict | None):
         yield
     finally:
         comps.SIM.clear(); comps.SIM.update(saved[0])
-        comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, comps.SEARCH = saved[1:]
+        comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, comps.SEARCH, comps.NBHD_REACH = saved[1:]
 
 
 def subjects_for(parcels: pd.DataFrame, sales: pd.DataFrame, months: int = 12,

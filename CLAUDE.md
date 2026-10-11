@@ -36,7 +36,7 @@ snapshots for future backtests) is committed by the workflow and can't be recrea
 
 ```bash
 pip install -r requirements.txt          # geopandas/pyogrio needed for the parcel map
-python -m pytest -q                      # 46 tests (~1-2 min); JS tests need node
+python -m pytest -q                      # 48 tests (~1-2 min); JS tests need node
 python -m pipeline.build                 # market data (downloads ~few hundred MB)
 python -m pipeline.county_build          # Pasco (downloads ~800 MB incl. 684 MB map; ~10 min)
 python -m pipeline.county_build --offline --raw-dir raw/pasco   # reuse downloads
@@ -193,6 +193,14 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
   or already recorded (same parcel within 45 days). Added sales count as market sales and
   move "as of" to the newest one (invariant 2). Redfin's "local MLS rules" footnote row is
   ignored. JS only: the Python report doesn't read uploads.
+- **Same-neighborhood reach** (`comps.NBHD_REACH` = 1 mi, both engines): sales in the subject's
+  appraiser neighborhood within 1 mi join the 0.5-mi ring, so a near-twin 0.8 mi away competes with
+  closer, less similar sales (Bill's test: 25342 Lexington Oaks Blvd missed 5868 War Admiral). Backtest:
+  comps 9.45% -> 9.39%, blend (2026) 8.76% -> 8.67%; held on odd and even months. 1.5 mi 9.41%, 2 mi 9.43%.
+- **Price trend** (`site/trend.js`, value page): 3-month medians of price, $/sf and price / current just
+  value (mix-free) for the subject's neighborhood, subdivision or ZIP, YoY on the same 6 months, charted
+  vs the ZIP ZHVI. Lexington Oaks fell ~5% YoY vs ZHVI -0.9%: the ZIP index may understate local
+  declines in comps' time adjustment (untested idea: neighborhood-level time index).
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.

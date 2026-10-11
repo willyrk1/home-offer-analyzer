@@ -24,6 +24,12 @@ def load_time_index(site_dir: Path) -> comps.TimeIndex:
     return comps.TimeIndex(series)
 
 
+def load_local(site_dir: Path, county: str) -> dict | None:
+    """Neighborhood trends exported with the county build (site_export), or None."""
+    f = site_dir / "counties" / county / "nbhd_trend.json"
+    return json.loads(f.read_text())["nbhds"] if f.exists() else None
+
+
 def money(v):
     return "—" if v is None else f"${v:,.0f}"
 
@@ -59,7 +65,8 @@ def render(r: dict) -> str:
         lines.append(
             f"    {c['sqft']:.0f} sf, built {c['year_built']:.0f}, {c['baths']} ba, lot {c['lot_acres']} ac, "
             f"pool {c['pool']}  | similarity {c['similarity']:.2f}, weight {c['weight']:.2f}")
-        lines.append(f"    time x{c['time_factor']:.3f} ({c['time_note']}) -> {money(c['time_adjusted'])}")
+        local = f", neighborhood trend x{c['local_factor']:.3f}" if c.get("local_factor", 1.0) != 1.0 else ""
+        lines.append(f"    time x{c['time_factor']:.3f} ({c['time_note']}{local}) -> {money(c['time_adjusted'])}")
         for a in c["adjustments"]:
             lines.append(f"      {a['label']:<26} diff {a['difference']:+.3f}  {a['pct']:+.1f}%  {money(a['dollars'])}")
         lines.append(f"    ADJUSTED {money(c['adjusted_price'])}  (net {c['net_pct']:+.1f}%, gross {c['gross_pct']:.1f}%)"
@@ -73,6 +80,7 @@ def main(argv=None):
     p.add_argument("--county", default="pasco")
     p.add_argument("--work-dir", type=Path)
     p.add_argument("--site-dir", type=Path, default=ROOT / "site" / "data")
+    p.add_argument("--nbhd-trend", action="store_true", help="add each neighborhood's trend to the ZIP index")
     a = p.parse_args(argv)
     work = a.work_dir or ROOT / "work" / a.county
     parcels = pd.read_parquet(work / "parcels.parquet")
@@ -81,11 +89,12 @@ def main(argv=None):
     bt_path = a.site_dir / "counties" / a.county / "backtest.json"
     ranges = json.loads(bt_path.read_text()).get("methods", {}).get("ranges", {}) if bt_path.exists() else {}
     tindex = load_time_index(a.site_dir)
+    local = load_local(a.site_dir, a.county) if a.nbhd_trend else None
     for addr in a.address:
         print("=" * 100)
         try:
             subj = comps.find_subject(parcels, addr, pasco.normalize_address)
-            r = comps.value_subject(subj, sales, model, tindex)
+            r = comps.value_subject(subj, sales, model, tindex, local=local)
             print(render(r))
             for m, v in r["methods"].items():
                 rng = comps.calibrated_range(v["fair_value"], *(v["range"] or [None, None]), subj["zip"], ranges.get(m))

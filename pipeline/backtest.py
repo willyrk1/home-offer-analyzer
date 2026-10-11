@@ -63,15 +63,18 @@ def _nearby(pool: pd.DataFrame, subject: pd.Series) -> pd.DataFrame:
 @contextmanager
 def settings(config: dict | None):
     """Temporarily override comps-engine settings: SIM weights by name, plus MIN_COMPS,
-    MAX_COMPS, DISTRESSED_WEIGHT, NBHD_REACH and search_scale (multiplies every search radius)."""
+    MAX_COMPS, DISTRESSED_WEIGHT, NBHD_REACH, local_<LOCAL_TREND key> and search_scale (multiplies every search radius)."""
     config = config or {}
-    saved = (dict(comps.SIM), comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, list(comps.SEARCH), comps.NBHD_REACH)
+    saved = (dict(comps.SIM), comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, list(comps.SEARCH),
+             comps.NBHD_REACH, dict(comps.LOCAL_TREND))
     try:
         for k, v in config.items():
             if k in comps.SIM:
                 comps.SIM[k] = v
             elif k in ("MIN_COMPS", "MAX_COMPS", "DISTRESSED_WEIGHT", "NBHD_REACH"):
                 setattr(comps, k, v)
+            elif k.startswith("local_") and k[6:] in comps.LOCAL_TREND:
+                comps.LOCAL_TREND[k[6:]] = v
             elif k == "search_scale":
                 comps.SEARCH = [(round(r * v, 3), m) for r, m in saved[4]]
             else:
@@ -79,7 +82,8 @@ def settings(config: dict | None):
         yield
     finally:
         comps.SIM.clear(); comps.SIM.update(saved[0])
-        comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, comps.SEARCH, comps.NBHD_REACH = saved[1:]
+        comps.MIN_COMPS, comps.MAX_COMPS, comps.DISTRESSED_WEIGHT, comps.SEARCH, comps.NBHD_REACH = saved[1:6]
+        comps.LOCAL_TREND.clear(); comps.LOCAL_TREND.update(saved[6])
 
 
 def subjects_for(parcels: pd.DataFrame, sales: pd.DataFrame, months: int = 12,
@@ -123,11 +127,15 @@ def run(parcels: pd.DataFrame, sales: pd.DataFrame, tindex: comps.TimeIndex, mon
     with settings(config):
         for month, group in subjects.groupby(subjects["date"].dt.to_period("M")):
             model, ti, t_month, window = month_context(sales, tindex, month, cache)
+            # Neighborhood trends from sales recorded before the month, with the index as then published.
+            first = month.start_time
+            local = (comps.neighborhood_trends(sales[sales["date"] < first], ti, first - pd.Timedelta(days=1))
+                     if comps.LOCAL_TREND["apply"] else None)
             for _, sale in group.iterrows():
                 as_of = sale["date"] - pd.Timedelta(days=1)
                 subject = parcel_by_id.loc[sale["parcel_id"]].copy()
                 subject["parcel_id"] = sale["parcel_id"]
-                r = comps.value_subject(subject, _nearby(window, subject), model, ti, as_of=as_of)
+                r = comps.value_subject(subject, _nearby(window, subject), model, ti, as_of=as_of, local=local)
                 fair = r["fair_value"]
                 year_now = as_of.year + as_of.dayofyear / 366
                 regression = valuation.predict(model, pd.DataFrame([{

@@ -21,6 +21,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from . import comps
+
 SALES_MONTHS = 24
 NEIGHBOR_MILES = 5.0
 
@@ -116,6 +118,9 @@ def export_county(name: str, parcels: pd.DataFrame, sales_all: pd.DataFrame, mod
     _write(out / "neighbors.json", zip_neighbors(p))
     _write(out / "tindex.json", {z: zip_series[z] for z in sorted(zip_series) if zip_series[z]})
     _write(out / "model.json", model)
+    # Neighborhood trends vs the ZIP index as of the latest sale; the page applies them (or not) to comps.
+    _write(out / "nbhd_trend.json", {"as_of": end.strftime("%Y-%m-%d"), "settings": dict(comps.LOCAL_TREND),
+                                     "nbhds": comps.neighborhood_trends(s, comps.TimeIndex(zip_series), end)})
     meta = {
         "county": name, "zips": zips, "sales_months": SALES_MONTHS,
         "latest_sale": end.strftime("%Y-%m-%d"),

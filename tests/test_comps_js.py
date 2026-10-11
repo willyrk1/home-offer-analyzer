@@ -1,5 +1,6 @@
 """The browser engine (site/comps.js) must agree with the Python engine."""
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -27,27 +28,30 @@ def built(tmp_path_factory):
     return tmp, site
 
 
-def run_js(site, address, explain=None):
+def run_js(site, address, explain=None, zip_only=False):
     args = ["node", str(ROOT / "tests" / "run_comps.js"), str(site), "pasco", address]
     if explain:
         args.append(explain)
-    return json.loads(subprocess.run(args, capture_output=True, text=True, check=True).stdout)
+    env = {**os.environ, **({"ZIP_ONLY": "1"} if zip_only else {})}
+    return json.loads(subprocess.run(args, capture_output=True, text=True, check=True, env=env).stdout)
 
 
-def python_value(tmp, site, address):
+def python_value(tmp, site, address, zip_only=False):
     parcels = pd.read_parquet(tmp / "work" / "parcels.parquet")
     sales = pd.read_parquet(tmp / "work" / "sales.parquet")
     model = json.loads((site / "counties" / "pasco" / "model.json").read_text())
     subj = comps.find_subject(parcels, address, pasco.normalize_address)
-    return comps.value_subject(subj, sales, model, comps_report.load_time_index(site))
+    local = None if zip_only else comps_report.load_local(site, "pasco")
+    return comps.value_subject(subj, sales, model, comps_report.load_time_index(site), local=local)
 
 
+@pytest.mark.parametrize("zip_only", [False, True])
 @pytest.mark.parametrize("address", ["1295 Montgomery Bell Rd, Wesley Chapel, FL 33543",
                                      "1002 Watoga Loop", "1006 Tonka Terrace"])
-def test_js_matches_python(built, address):
+def test_js_matches_python(built, address, zip_only):
     tmp, site = built
-    py = python_value(tmp, site, address)
-    js = run_js(site, address)
+    py = python_value(tmp, site, address, zip_only)
+    js = run_js(site, address, zip_only=zip_only)
     assert js["as_of"] == py["as_of"]
     assert js["search"]["area"] == py["search"]["area"] or "mi" in js["search"]["area"]
     assert [c["parcel_id"] for c in js["comps"]] == [c["parcel_id"] for c in py["comps"]]
@@ -62,6 +66,17 @@ def test_js_matches_python(built, address):
     for a, b in zip(js["comps"], py["comps"]):
         assert a["adjusted_price"] == pytest.approx(b["adjusted_price"], rel=1e-9)
         assert a["weight"] == pytest.approx(b["weight"], rel=1e-9)
+        assert a["local_factor"] == pytest.approx(b["local_factor"], rel=1e-9)
+        if zip_only:
+            assert b["local_factor"] == 1.0
+
+
+def test_neighborhood_trend_exported_and_applied(built):
+    tmp, site = built
+    trend = json.loads((site / "counties" / "pasco" / "nbhd_trend.json").read_text())
+    assert trend["nbhds"] and all(abs(v["slope"]) <= trend["settings"]["cap"] for v in trend["nbhds"].values())
+    py = python_value(tmp, site, "1295 Montgomery Bell Rd, Wesley Chapel, FL 33543")
+    assert any(c["local_factor"] != 1.0 for c in py["comps"])
 
 
 def test_export_files_and_privacy(built):

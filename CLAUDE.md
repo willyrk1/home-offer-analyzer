@@ -36,7 +36,7 @@ snapshots for future backtests) is committed by the workflow and can't be recrea
 
 ```bash
 pip install -r requirements.txt          # geopandas/pyogrio needed for the parcel map
-python -m pytest -q                      # 48 tests (~1-2 min); JS tests need node
+python -m pytest -q                      # 52 tests (~1-2 min); JS tests need node
 python -m pipeline.build                 # market data (downloads ~few hundred MB)
 python -m pipeline.county_build          # Pasco (downloads ~800 MB incl. 684 MB map; ~10 min)
 python -m pipeline.county_build --offline --raw-dir raw/pasco   # reuse downloads
@@ -199,8 +199,15 @@ weekly, free). Probe report with full layouts and code tables: `probe-output` br
   comps 9.45% -> 9.39%, blend (2026) 8.76% -> 8.67%; held on odd and even months. 1.5 mi 9.41%, 2 mi 9.43%.
 - **Price trend** (`site/trend.js`, value page): 3-month medians of price, $/sf and price / current just
   value (mix-free) for the subject's neighborhood, subdivision or ZIP, YoY on the same 6 months, charted
-  vs the ZIP ZHVI. Lexington Oaks fell ~5% YoY vs ZHVI -0.9%: the ZIP index may understate local
-  declines in comps' time adjustment (untested idea: neighborhood-level time index).
+  vs the ZIP ZHVI. Lexington Oaks fell ~5% YoY vs ZHVI -0.9%; using that in the time adjustment was
+  tested (next item) and didn't help.
+- **Neighborhood trend** (`comps.neighborhood_trends`, `LOCAL_TREND`; `nbhd_trend.json`; page toggle
+  "Bring comp prices to today with"): per appraiser neighborhood, slope over 24 months of
+  log(price / just value) − log(ZIP ZHVI), shrunk by tau²/(tau²+se²), applied as exp(slope × years since
+  sale) on top of the ZIP index. Backtest (no look-ahead, trends from sales before each month): no gain at
+  any shrinkage (comps 9.39% off; tau 0.02 9.41, 0.05 9.40, 0.1 9.43, 1.0 9.44; blend 8.67–8.69); bias
+  −0.79 -> −0.69 only. Comps are mostly < 6 months old, so the factor is ~1%, and past local drift doesn't
+  persist. Kept as an option, default ZIP only (`LOCAL_TREND["apply"]` False; report `--nbhd-trend`).
 - Known gaps: condition/upgrades/views (e.g. conservation lots) not in the data;
   two-story discount may partly proxy for floor-plan/age effects; weights in
   `_similarity` are hand-set, not tuned.

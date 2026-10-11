@@ -127,8 +127,12 @@
   }
 
   // ---------- adjustments (comps.adjust) ----------
-  function adjust(c, subjX, compX, model, tindex) {
-    const [tf, tnote] = timeFactor(tindex, c.zip, c.date);
+  /** local: neighborhood trends {nbhd: {slope}} (nbhd_trend.json, comps.neighborhood_trends) or null. */
+  function adjust(c, subjX, compX, model, tindex, local, asOf) {
+    const [zf, tnote] = timeFactor(tindex, c.zip, c.date);
+    const trend = local && local[c.nbhd];
+    const localFactor = trend && asOf ? Math.exp(trend.slope * ((asOf - parseDate(c.date)) / 86400000) / 365.25) : 1.0;
+    const tf = zf * localFactor;
     const base = c.price * tf;
     const lines = [];
     let logSum = 0, gross = 0;
@@ -142,7 +146,7 @@
       lines.push({ feature: f, label: model.features[f].label, coef: b, difference: d,
         pct: pct * 100, dollars: base * pct });
     }
-    return { time_factor: tf, time_note: tnote, time_adjusted: base, adjustments: lines,
+    return { time_factor: tf, time_note: tnote, local_factor: localFactor, time_adjusted: base, adjustments: lines,
       adjusted_price: base * Math.exp(logSum), net_pct: Math.expm1(logSum) * 100, gross_pct: gross * 100 };
   }
 
@@ -179,7 +183,8 @@
 
   const inSize = (s, subject) => Math.abs(Math.log(s.sqft / subject.sqft)) <= SIZE_LIMIT;
 
-  /** Value a subject. opts: {asOf, includeDistressed, excluded: [parcel_id], forced: [sale rows]} */
+  /** Value a subject. opts: {asOf, includeDistressed, excluded: [parcel_id], forced: [sale rows],
+      local: neighborhood trends to apply on top of the ZIP index, or null for the ZIP index alone} */
   function valueSubject(subject, sales, model, tindex, opts = {}) {
     const asOf = parseDate(opts.asOf);
     let pool = buildPool(subject, sales, opts);
@@ -206,7 +211,7 @@
       const sim = similarity(withD, subject, asOf);
       chosen.push({ ...withD, similarity: sim.score, sim_parts: sim.parts, forced: true });
     }
-    return finish(subject, chosen, model, tindex, asOf, reach, pool);
+    return finish(subject, chosen, model, tindex, asOf, reach, pool, opts.local || null);
   }
 
   // ---------- other ways to turn comps into a value (comps.assessed_value / combine_methods) ----------
@@ -271,7 +276,7 @@
     return m;
   }
 
-  function finish(subject, chosen, model, tindex, asOf, reach, pool) {
+  function finish(subject, chosen, model, tindex, asOf, reach, pool, local) {
     const yearNow = asOf.getUTCFullYear() + dayOfYear(asOf) / 366;
     const subjRow = { sqft: subject.sqft, year_built: subject.year_built, lot_acres: subject.lot_acres,
       baths: num(subject.baths, 2.0), stories: num(subject.stories, 1.0), quality: num(subject.quality, 4.0),
@@ -282,7 +287,7 @@
     let ki = 0, kf = 0;
     const comps = chosen.map((c) => {
       const x = c.forced ? compXForced[kf++] : compX[ki++];
-      const adj = adjust(c, subjX, x, model, tindex);
+      const adj = adjust(c, subjX, x, model, tindex, local, asOf);
       let weight = c.similarity / (1 + adj.gross_pct / 100);
       if (c.sale_class === "distressed") weight *= DISTRESSED_WEIGHT;
       const flags = [];

@@ -5,6 +5,11 @@ const BASE = `data/counties/${COUNTY}/`;
 const $ = (s) => document.querySelector(s);
 const cache = new Map();
 const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, explain: null, method: null, level: "80" };
+// Time adjustment: the ZIP's Zillow index alone, or plus the neighborhood's own trend vs that index
+// (pipeline/comps.neighborhood_trends). Default = the backtest winner: the ZIP index alone (the
+// neighborhood trend didn't lower the miss at any strength; CLAUDE.md, "Neighborhood trend").
+const TIME_DEFAULT = "zip";
+state.time = TIME_DEFAULT;
 const METHOD_NAMES = { comps: "Adjusted comps", assessed: "Appraiser ratio", blend: "Blend of both" };
 const METHOD_DESC = {
   comps: "nearby sales, each adjusted for every difference from this house",
@@ -27,8 +32,9 @@ async function getJSON(path) {
 async function loadCommon() {
   const [meta, model, tindex, streets, neighbors] = await Promise.all(
     ["meta.json", "model.json", "tindex.json", "streets.json", "neighbors.json"].map(getJSON));
-  const backtest = await getJSON("backtest.json").catch(() => null);   // optional
-  return { meta, model, tindex, streets, neighbors, backtest };
+  const [backtest, nbhdTrend] = await Promise.all(["backtest.json", "nbhd_trend.json"]
+    .map((f) => getJSON(f).catch(() => null)));                         // optional
+  return { meta, model, tindex, streets, neighbors, backtest, nbhdTrend };
 }
 
 async function findSubject(text, common) {
@@ -84,7 +90,12 @@ async function run(addressText) {
 
 function compute() {
   const { subject, model, tindex } = state.ctx;
-  return Comps.valueSubject(subject, allSales(), model, tindex, { ...state.opts, asOf: asOfDate() });
+  return Comps.valueSubject(subject, allSales(), model, tindex, engineOpts());
+}
+
+function engineOpts() {
+  const t = state.ctx.nbhdTrend;
+  return { ...state.opts, asOf: asOfDate(), local: state.time === "nbhd" && t ? t.nbhds : null };
 }
 
 // ---------- your Redfin "recently sold" file (site/upload.js): this browser only, never published ----------
@@ -202,7 +213,7 @@ function render() {
           <div class="note">for tax purposes; usually below market</div></div>
       </div>
       ${methodPicker(r, method)}
-      <p class="explain">${searchText}. Each sale is brought to today's prices with the ZIP's home value index, then adjusted for every difference using values fitted on Pasco sales. Closer matches and smaller adjustments count more.${assessedText(r, method)}</p>
+      <p class="explain">${searchText}. Each sale is brought to today's prices with ${state.time === "nbhd" && state.ctx.nbhdTrend ? "the ZIP's home value index and its neighborhood's trend" : "the ZIP's home value index"}, then adjusted for every difference using values fitted on Pasco sales. Closer matches and smaller adjustments count more.${assessedText(r, method)}</p>
 
       ${accuracyHtml(r, method)}
 
@@ -214,6 +225,7 @@ function render() {
         <label><input type="checkbox" id="opt-distressed" ${state.opts.includeDistressed ? "checked" : ""}> Include distressed sales (bank-owned, short sales) at half weight</label>
         <label><input type="checkbox" id="opt-math" ${state.showMath ? "checked" : ""}> Show the math for every comp</label>
       </div>
+      ${timeHtml(s)}
 
       <h3>Comps</h3>
       <div class="table-scroll">
@@ -243,6 +255,7 @@ function render() {
   box.querySelectorAll("input[name=method]").forEach((el) => el.onchange = () => { state.method = el.value; render(); });
   $("#opt-distressed").onchange = (e) => { state.opts.includeDistressed = e.target.checked; render(); };
   $("#opt-math").onchange = (e) => { state.showMath = e.target.checked; render(); };
+  box.querySelectorAll("input[name=time]").forEach((el) => el.onchange = () => { state.time = el.value; render(); });
   box.querySelectorAll("[data-toggle]").forEach((b) => b.onclick = () => {
     const row = box.querySelector(`#math-${b.dataset.toggle}`); row.hidden = !row.hidden;
     b.textContent = row.hidden ? "math" : "hide";
@@ -438,6 +451,24 @@ function renderOffer(r, method) {
   if ($("#builder-out")) $("#builder-out").innerHTML = state.builder ? builderOut(p, list) : "";
   $("#market-out").innerHTML = marketHtml(list);
   $("#conc-out").innerHTML = concessionsHtml(p.target);
+}
+
+// ---------- time adjustment choice ----------
+const trendPct = (nb) => { const t = state.ctx.nbhdTrend && state.ctx.nbhdTrend.nbhds[nb]; return t ? Math.expm1(t.slope) * 100 : null; };
+
+function timeHtml(s) {
+  const t = state.ctx.nbhdTrend;
+  if (!t) return "";
+  const mine = t.nbhds[s.nbhd];
+  const note = mine
+    ? `${esc(s.nbhd_name || s.nbhd)}: ${pct(trendPct(s.nbhd))} a year vs the ${esc(s.zip)} index, from ${mine.n} sales over ${t.settings.months} months (measured ${pct(Math.expm1(mine.raw) * 100)}, pulled toward 0 by how scattered the sales are).`
+    : `${esc(s.nbhd_name || s.nbhd)} has too few sales for its own trend (${t.settings.min_n} needed), so its comps use the ZIP index alone either way.`;
+  const opt = (v, label, desc) => `<label class="method"><input type="radio" name="time" value="${v}" ${state.time === v ? "checked" : ""}>
+    <span class="m-name">${label}${v === TIME_DEFAULT ? " (best)" : ""}</span><span class="m-value"></span><span class="m-note">${desc}</span></label>`;
+  return `<fieldset class="methods"><legend>Bring comp prices to today with</legend>
+    ${opt("zip", "ZIP index only", `Zillow's home value index for each comp's ZIP. In past sales, adding neighborhood trends didn't make values closer to sale prices.`)}
+    ${opt("nbhd", "ZIP index + neighborhood trend", note)}
+  </fieldset>`;
 }
 
 // ---------- local price trend from recorded sales (site/trend.js) ----------
@@ -645,7 +676,9 @@ function compRow(c, i) {
     <tr id="math-${i}" class="math" ${state.showMath ? "" : "hidden"}><td colspan="11">
       <table class="mathtable">
         <tr><td>Sale price (${esc(c.date)}, ${esc(c.sale_class)})</td><td></td><td class="num">${money(c.price)}</td></tr>
-        <tr><td>Time: ZIP ${esc(c.zip)} index ${esc(c.time_note)}</td><td class="num">×${c.time_factor.toFixed(3)}</td><td class="num">${money(c.time_adjusted)}</td></tr>
+        ${c.local_factor !== 1 ? `<tr><td>Time: ZIP ${esc(c.zip)} index ${esc(c.time_note)}</td><td class="num">×${(c.time_factor / c.local_factor).toFixed(3)}</td><td class="num">${money(c.price * c.time_factor / c.local_factor)}</td></tr>
+        <tr><td>Time: neighborhood ${esc(c.nbhd)} trend vs the ZIP, ${pct(trendPct(c.nbhd))}/yr</td><td class="num">×${c.local_factor.toFixed(3)}</td><td class="num">${money(c.time_adjusted)}</td></tr>`
+        : `<tr><td>Time: ZIP ${esc(c.zip)} index ${esc(c.time_note)}</td><td class="num">×${c.time_factor.toFixed(3)}</td><td class="num">${money(c.time_adjusted)}</td></tr>`}
         ${c.just_value ? `<tr><td>Appraiser ratio: ${money(c.time_adjusted)} ÷ appraiser value ${money(c.just_value)}${
           state.ctx.lastAssessedUsed && !state.ctx.lastAssessedUsed.includes(c.parcel_id) ? " (not used: far from the other comps' ratios)" : ""}</td>
           <td class="num">${(c.time_adjusted / c.just_value).toFixed(3)}</td><td></td></tr>` : ""}
@@ -684,7 +717,7 @@ function describeDiff(a, c) {
 function runExplain(text, r) {
   const { subject, model, tindex } = state.ctx;
   const key = Comps.normalizeAddress(String(text).split(",")[0]);
-  state.explain = Comps.explain(key, subject, allSales(), model, tindex, r, state.opts);
+  state.explain = Comps.explain(key, subject, allSales(), model, tindex, r, engineOpts());
   $("#why-out").innerHTML = explainHtml(state.explain, r);
   const add = $("#force-add");
   if (add) add.onclick = () => {

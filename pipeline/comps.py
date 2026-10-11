@@ -85,6 +85,63 @@ class TimeIndex:
                           ((z, sorted(s.items())) for z, s in self.idx.items())})
 
 
+# Neighborhood trend on top of the ZIP index (see neighborhood_trends). tau = 0 turns it off.
+# An option, not the default ("apply": the backtest uses it): over 12 months of sales it didn't
+# help at any shrinkage (comps 9.39% off; tau 0.02 9.41, 0.05 9.40, 0.1 9.43, 1.0 9.44).
+LOCAL_TREND = {"months": 24, "min_n": 10, "tau": 0.05, "trim": 0.4, "cap": 0.2, "apply": False}
+
+
+def neighborhood_trends(sales: pd.DataFrame, tindex: TimeIndex, as_of: pd.Timestamp) -> dict:
+    """Each appraiser neighborhood's price trend relative to its ZIP's Zillow index, as a log
+    change per year. Market sales from the last `months` months, measured as
+    y = log(price / just value) - log(ZIP index in the sale month): every parcel carries the same
+    year's just value, so y follows prices for the same houses, net of the ZIP's own move.
+    Slope of y on time per neighborhood (sales more than `trim` from its median dropped, as
+    remodels or partial just values), shrunk toward 0 by tau^2 / (tau^2 + se^2): with few or
+    scattered sales it barely moves. Capped at +/-cap per year."""
+    cfg = LOCAL_TREND
+    if not cfg["tau"]:
+        return {}
+    s = sales[(sales["sale_class"] == "market") & (sales["date"] <= as_of)
+              & (sales["date"] > as_of - pd.DateOffset(months=cfg["months"]))
+              & (pd.to_numeric(sales["just_value"], errors="coerce") > 0) & sales["nbhd"].notna()]
+    if s.empty:
+        return {}
+    months = s["date"].dt.strftime("%Y-%m")
+    idx = np.array([_index_at(tindex, z, m) for z, m in zip(s["zip"], months)], dtype=float)
+    keep = np.isfinite(idx) & (idx > 0)
+    s = s[keep]
+    y = np.log(s["price"].to_numpy(float) / s["just_value"].to_numpy(float)) - np.log(idx[keep])
+    d = pd.DataFrame({"nbhd": s["nbhd"].to_numpy(), "y": y,
+                      "t": (s["date"] - as_of).dt.days.to_numpy(float) / 365.25})
+    d = d[np.abs(d["y"] - d.groupby("nbhd")["y"].transform("median")) <= cfg["trim"]]
+    out = {}
+    for nb, g in d.groupby("nbhd", sort=True):
+        n = len(g)
+        if n < cfg["min_n"]:
+            continue
+        tc = g["t"] - g["t"].mean()
+        sxx = float((tc ** 2).sum())
+        if sxx <= 0:
+            continue
+        b = float((tc * (g["y"] - g["y"].mean())).sum() / sxx)
+        resid = g["y"] - g["y"].mean() - b * tc
+        se = math.sqrt(float((resid ** 2).sum()) / (n - 2) / sxx)
+        shrunk = b * cfg["tau"] ** 2 / (cfg["tau"] ** 2 + se ** 2)
+        out[nb] = {"slope": max(-cfg["cap"], min(cfg["cap"], shrunk)), "raw": b, "se": se, "n": n}
+    return out
+
+
+def _index_at(tindex: TimeIndex, zip_code, month: str) -> float:
+    s = tindex.idx.get(zip_code)
+    if not s:
+        return float("nan")
+    if month in s:
+        return s[month]
+    earlier = [m for m in s if m <= month]
+    return s[max(earlier)] if earlier else float("nan")
+
+
 def _f(v, default=np.nan) -> float:
     try:
         f = float(v)
@@ -180,8 +237,13 @@ def combine_methods(subject: pd.Series, comps: list[dict], fair, spread) -> dict
 
 
 def adjust(comp: pd.Series, subj_x: pd.Series, comp_x: pd.Series, model: dict,
-           tindex: TimeIndex) -> dict:
+           tindex: TimeIndex, local: dict | None = None, as_of: pd.Timestamp | None = None) -> dict:
     t_factor, t_note = tindex.factor(comp["zip"], comp["date"])
+    local_factor = 1.0
+    trend = (local or {}).get(comp.get("nbhd"))
+    if trend and as_of is not None:
+        local_factor = math.exp(trend["slope"] * (as_of - comp["date"]).days / 365.25)
+        t_factor *= local_factor
     base = comp["price"] * t_factor
     lines, log_sum, gross = [], 0.0, 0.0
     for f in valuation.FEATURES:
@@ -197,14 +259,16 @@ def adjust(comp: pd.Series, subj_x: pd.Series, comp_x: pd.Series, model: dict,
     adjusted = base * math.exp(log_sum)
     net = math.expm1(log_sum)
     return {
-        "time_factor": t_factor, "time_note": t_note, "time_adjusted": base,
+        "time_factor": t_factor, "time_note": t_note, "local_factor": local_factor, "time_adjusted": base,
         "adjustments": lines, "adjusted_price": adjusted,
         "net_pct": net * 100, "gross_pct": gross * 100,
     }
 
 
 def value_subject(subject: pd.Series, sales: pd.DataFrame, model: dict, tindex: TimeIndex,
-                  as_of: pd.Timestamp | None = None, exclude_parcel: bool = True) -> dict:
+                  as_of: pd.Timestamp | None = None, exclude_parcel: bool = True,
+                  local: dict | None = None) -> dict:
+    """`local`: neighborhood trends (neighborhood_trends) applied on top of the ZIP index; None = ZIP only."""
     as_of = as_of or sales["date"].max()
     pool = sales[sales["property_type"] == subject["property_type"]]
     if exclude_parcel:
@@ -250,7 +314,7 @@ def value_subject(subject: pd.Series, sales: pd.DataFrame, model: dict, tindex: 
 
     comps = []
     for i, c in chosen.iterrows():
-        adj = adjust(c, subj_x, comp_x.loc[i], model, tindex)
+        adj = adjust(c, subj_x, comp_x.loc[i], model, tindex, local, as_of)
         weight = c["similarity"] / (1 + adj["gross_pct"] / 100)
         if c["sale_class"] == "distressed":
             weight *= DISTRESSED_WEIGHT

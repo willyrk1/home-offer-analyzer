@@ -158,6 +158,13 @@ table.comps th, table.comps td { padding: 8px 7px; }
 .accuracy .acc th { color: var(--muted); font-weight: 600; font-size: 12px; }
 .accuracy .acc .num { text-align: right; white-space: nowrap; }
 .explain.warn { color: var(--seller); }
+.breakdown h4 { margin: 16px 0 4px; font-size: 14px; }
+.breakdown .acc tfoot td { font-weight: 650; border-bottom: 0; }
+.breakdown .acc tr.thin td { color: var(--muted); }
+.breakdown .acc .strong { font-weight: 650; }
+.breakdown ul.explain { padding-left: 20px; }
+.breakdown details.sub { margin: 6px 0 0; }
+.breakdown details.sub summary { cursor: pointer; display: list-item; }
 
 .methods { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 10px; margin: 0 0 14px; display: grid; gap: 6px; }
 .methods legend { font-weight: 600; padding: 0 4px; }

@@ -4,7 +4,7 @@ const COUNTY = "pasco";
 const BASE = `data/counties/${COUNTY}/`;
 const $ = (s) => document.querySelector(s);
 const cache = new Map();
-const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, explain: null, method: null, level: "80" };
+const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, showBreakdown: false, explain: null, method: null, level: "80" };
 // Time adjustment: the ZIP's Zillow index alone, or plus the neighborhood's own trend vs that index
 // (pipeline/comps.neighborhood_trends). Default = the backtest winner: the ZIP index alone (the
 // neighborhood trend didn't lower the miss at any strength; CLAUDE.md, "Neighborhood trend").
@@ -215,6 +215,8 @@ function render() {
       ${methodPicker(r, method)}
       <p class="explain">${searchText}. Each sale is brought to today's prices with ${state.time === "nbhd" && state.ctx.nbhdTrend ? "the ZIP's home value index and its neighborhood's trend" : "the ZIP's home value index"}, then adjusted for every difference using values fitted on Pasco sales. Closer matches and smaller adjustments count more.${assessedText(r, method)}</p>
 
+      ${breakdownHtml(r, method, cal, range)}
+
       ${accuracyHtml(r, method)}
 
       ${offerHtml(r, method)}
@@ -248,6 +250,8 @@ function render() {
       <div id="why-out">${state.explain ? explainHtml(state.explain, r) : ""}</div>
     </div>`;
 
+  const bd = $("#breakdown");
+  if (bd) bd.ontoggle = () => { state.showBreakdown = bd.open; };
   bindOffer(r, method);
   renderTrend();
   bindUpload();
@@ -315,6 +319,144 @@ function assessedText(r, method) {
   return ` <strong>Appraiser ratio:</strong> after the time adjustment, the comps sold for ${a.ratio.toFixed(3)}× their appraiser
     just values on average (weighted by similarity), so ${money(a.just_value)} × ${a.ratio.toFixed(3)} = ${money(a.fair_value)}.
     The appraiser's value already reflects size, age, lot and location, so no feature adjustments are applied.`;
+}
+
+// ---------- how we got the fair value: every step from sales to the number in the hero tile ----------
+const FEATURE_UNIT = {
+  ln_sqft: (b) => `${b.toFixed(2)}% per 1% more sq ft`,
+  age: (b) => `${pct(Math.expm1(b) * 100, 2)} per year older`,
+  new: (b) => pct(Math.expm1(b) * 100),
+  ln_lot: (b) => `${b.toFixed(3)}% per 1% more lot`,
+  baths: (b) => `${pct(Math.expm1(b) * 100)} per bath`,
+  pool: (b) => pct(Math.expm1(b) * 100),
+  two_story: (b) => pct(Math.expm1(b) * 100),
+  quality: (b) => `${pct(Math.expm1(b) * 100)} per grade step`,
+};
+const SIM_LABELS = { size: "size", age: "age", lot: "lot", baths: "baths", pool: "pool", dist: "distance", months: "how long ago" };
+const sumOf = (xs) => xs.reduce((a, b) => a + b, 0);
+const f3 = (v) => v.toFixed(3);
+
+function breakdownHtml(r, method, cal, range) {
+  const m = r.methods[method];
+  if (m.fair_value == null || !r.comps.length) return "";
+  const s = r.subject, comps = r.comps, model = state.ctx.model;
+  const W = sumOf(comps.map((c) => c.weight));
+  const comp = r.methods.comps.fair_value;
+  const spread = (r.methods.comps.range[1] - r.methods.comps.range[0]) / 2;
+  const step = (n, title, body) => `<h4>${n}. ${title}</h4>${body}`;
+  let n = 0;
+
+  const find = step(++n, "Find the comps", `<p class="explain">Start from the ${r.pool_size.toLocaleString()} recorded ${esc(type(s.property_type))} sales
+    (${state.opts.includeDistressed ? "market and distressed" : "market only"}) in ${esc(s.zip)} and neighboring ZIPs, latest sale of each house, this house excluded.
+    Widen the search until at least ${Comps.MIN_COMPS} sales qualify: it stopped at <b>${esc(r.search.area)}, sold in the last ${r.search.months} months</b>,
+    size within ±${Math.round(Comps.SIZE_LIMIT * 100)}% of ${Math.round(s.sqft).toLocaleString()} sq ft. Keep the ${Comps.MAX_COMPS} most similar
+    (similarity score, below)${comps.some((c) => c.forced) ? ", plus the ones you added" : ""}.</p>`);
+
+  const coefs = Comps.FEATURES.filter((f) => model.features[f] && isFinite(model.features[f].coef))
+    .map((f) => `${esc(model.features[f].label.replace(/ \(.*\)$/, ""))} ${FEATURE_UNIT[f](model.features[f].coef)}`).join("; ");
+  const rows = comps.map((c) => {
+    const share = c.weight / W;
+    return `<tr><td>${esc(c.address)}</td><td class="num">${money(c.price)}</td><td class="num">×${f3(c.time_factor)}</td>
+      <td class="num">${money(c.time_adjusted)}</td><td class="num">${pct(c.net_pct)}</td><td class="num strong">${money(c.adjusted_price)}</td>
+      <td class="num">${c.weight.toFixed(3)}</td><td class="num">${(share * 100).toFixed(1)}%</td><td class="num">${money(share * c.adjusted_price)}</td></tr>`;
+  }).join("");
+  const sumWA = sumOf(comps.map((c) => c.weight * c.adjusted_price));
+  const adjust = step(++n, "Bring each sale to today and adjust it to this house", `<p class="explain">Time: each price × the change in
+    ${state.time === "nbhd" && state.ctx.nbhdTrend ? "the comp ZIP's Zillow home value index and its neighborhood's trend" : "the comp ZIP's Zillow home value index"}
+    from the month it sold to the latest month. Features: for each difference, × e<sup>coef × difference</sup>, with coefficients fitted on
+    ${model.n_sales.toLocaleString()} Pasco market sales: ${coefs}. Each comp's line-by-line math is under "math" in the comps table.</p>
+    <div class="table-scroll"><table class="acc">
+      <thead><tr><th>Comp</th><th class="num">Sold for</th><th class="num">Time</th><th class="num">Today</th><th class="num">Features</th>
+        <th class="num">Adjusted</th><th class="num">Weight</th><th class="num">Share</th><th class="num">Counts for</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>Total</td><td></td><td></td><td></td><td></td><td></td><td class="num">${W.toFixed(3)}</td><td class="num">100%</td><td class="num strong">${money(comp)}</td></tr></tfoot>
+    </table></div>`);
+
+  const weights = step(++n, "Weight the comps", `<p class="explain">Weight = similarity ÷ (1 + gross adjustment)${comps.some((c) => c.sale_class === "distressed")
+    ? ` × ${Comps.DISTRESSED_WEIGHT} for distressed sales` : ""}, so close matches that need little adjusting count most. Share = weight ÷ ${W.toFixed(3)} (the total).</p>
+    ${similarityHtml(r)}`);
+
+  const avg = step(++n, "Average them", `<p class="explain">Adjusted comps value = Σ(weight × adjusted price) ÷ Σ weight
+    = ${money(sumWA)} ÷ ${W.toFixed(3)} = <b>${money(comp)}</b>. The comps disagree by ±${money(spread)}
+    (weighted standard deviation of the adjusted prices), ${(spread / comp * 100).toFixed(1)}% of the value.</p>`);
+
+  let methodSteps = "";
+  const a = r.methods.assessed;
+  if (method !== "comps" && a.fair_value != null) {
+    const used = new Set(a.used);
+    const aw = (c) => c.similarity * (c.sale_class === "distressed" ? Comps.DISTRESSED_WEIGHT : 1);
+    const AW = sumOf(comps.filter((c) => used.has(c.parcel_id)).map(aw));
+    const arows = comps.filter((c) => c.just_value).map((c) => {
+      const on = used.has(c.parcel_id);
+      return `<tr${on ? "" : ' class="thin"'}><td>${esc(c.address)}${on ? "" : " (not used: far from the others)"}</td><td class="num">${money(c.time_adjusted)}</td>
+        <td class="num">${money(c.just_value)}</td><td class="num">${f3(c.time_adjusted / c.just_value)}</td>
+        <td class="num">${on ? aw(c).toFixed(3) : "—"}</td><td class="num">${on ? (aw(c) / AW * 100).toFixed(1) + "%" : "—"}</td></tr>`;
+    }).join("");
+    methodSteps += step(++n, "Appraiser ratio", `<p class="explain">For each comp, today's price ÷ its appraiser just value; ratios more than
+      1.5× from the median are dropped. Weighted by similarity${comps.some((c) => c.sale_class === "distressed") ? ` (× ${Comps.DISTRESSED_WEIGHT} distressed)` : ""}
+      — no gross-adjustment penalty, since nothing is adjusted.</p>
+      <div class="table-scroll"><table class="acc">
+        <thead><tr><th>Comp</th><th class="num">Today</th><th class="num">Just value</th><th class="num">Ratio</th><th class="num">Weight</th><th class="num">Share</th></tr></thead>
+        <tbody>${arows}</tbody>
+      </table></div>
+      <p class="explain">Weighted ratio ${f3(a.ratio)} × this house's just value ${money(a.just_value)} = <b>${money(a.fair_value)}</b>
+        (±${money((a.range[1] - a.range[0]) / 2)} spread across the comps).</p>`);
+  }
+  if (method === "blend") {
+    methodSteps += step(++n, "Blend", `<p class="explain">(${money(comp)} adjusted comps + ${money(a.fair_value)} appraiser ratio) ÷ 2
+      = <b>${money(m.fair_value)}</b>. Spread: the average of the two, ±${money((m.range[1] - m.range[0]) / 2)}.</p>`);
+  }
+
+  let rangeStep = "";
+  const rp = cal && Comps.calibratedRangeParts(m.fair_value, m.range[0], m.range[1], s.zip, cal, state.level);
+  if (rp) {
+    rangeStep = step(++n, `The ${state.level}% range`, `<p class="explain">Two sources of doubt, each scaled by a factor fitted in the backtest so ranges like this
+      hold the sale price about ${state.level}% of the time:</p>
+      <ul class="explain">
+        <li>z = ${f3(rp.z)}: typical miss (log) in past sales ${rp.zipScaled ? `in ZIP ${esc(s.zip)}` : "county-wide (too few in this ZIP)"}; a = ${f3(rp.a)}</li>
+        <li>s = ${f3(rp.s)}: how much the comps disagree, spread ÷ value (${money((m.range[1] - m.range[0]) / 2)} ÷ ${money(m.fair_value)}); k = ${f3(rp.k)}</li>
+      </ul>
+      <p class="explain">h = √((a·z)² + (k·s)²) = √(${f3(rp.a * rp.z)}² + ${f3(rp.k * rp.s)}²) = ${f3(rp.h)}.
+        Range = ${money(m.fair_value)} × e<sup>±${f3(rp.h)}</sup> = <b>${money(rp.range[0])} – ${money(rp.range[1])}</b>
+        (−${((1 - Math.exp(-rp.h)) * 100).toFixed(1)}% / +${(Math.expm1(rp.h) * 100).toFixed(1)}%).</p>`);
+  } else if (range) {
+    rangeStep = step(++n, "The range", `<p class="explain">Value ± the spread: ${money(range[0])} – ${money(range[1])}. (No backtest yet to size it.)</p>`);
+  }
+
+  return `
+    <details class="accuracy breakdown" id="breakdown" ${state.showBreakdown ? "open" : ""}>
+      <summary><h3>How we got ${money(m.fair_value)}</h3> <span>every step, from recorded sales to the fair value and range</span></summary>
+      ${find}${adjust}${weights}${avg}${methodSteps}${rangeStep}
+      <p class="explain">Amounts are rounded to the dollar, so a column can be $1 off its total. Sources: Pasco County Property Appraiser
+        sales through ${esc(asOfDate())}${uploadedSales().length ? " plus your Redfin file" : ""}; Zillow ZHVI by ZIP through ${esc(lastIndexMonth(s.zip))}.</p>
+    </details>`;
+}
+
+function lastIndexMonth(zip) {
+  const sr = state.ctx.tindex[zip];
+  return sr && sr.length ? monthName(sr[sr.length - 1][0]) : "—";
+}
+
+/** Similarity = 1 ÷ (1 + penalty); penalty = Σ weight × difference, less bonuses for the same neighborhood / subdivision. */
+function similarityHtml(r) {
+  const S = Comps.SIM, s = r.subject, keys = Object.keys(SIM_LABELS);
+  const rows = r.comps.map((c) => {
+    const p = c.sim_parts || {};
+    const bonus = S.same_nbhd * (c.nbhd === s.nbhd ? 1 : 0) + S.same_subdivision * (c.subdivision === s.subdivision ? 1 : 0);
+    const pen = sumOf(keys.map((k) => S[k] * (p[k] || 0))) - bonus;
+    return `<tr><td>${esc(c.address)}</td>${keys.map((k) => `<td class="num">${(S[k] * (p[k] || 0)).toFixed(2)}</td>`).join("")}
+      <td class="num">${bonus ? "−" + bonus.toFixed(2) : "0"}</td><td class="num">${Math.max(pen, 0).toFixed(2)}</td><td class="num">${c.similarity.toFixed(3)}</td>
+      <td class="num">${(c.gross_pct / 100).toFixed(3)}</td><td class="num">${c.weight.toFixed(3)}</td></tr>`;
+  }).join("");
+  return `<details class="sub"><summary class="explain">Similarity scores, comp by comp</summary>
+    <p class="explain">Penalty points: size ${S.size} × |log size ratio| ÷ 0.15; age ${S.age} × years apart ÷ 10; lot ${S.lot} × |log lot ratio| ÷ 0.5;
+      baths ${S.baths} per bath; pool ${S.pool} × 0.5 if one has a pool and the other doesn't; distance ${S.dist} per mile; how long ago ${S.months} per 6 months;
+      bonus −${S.same_nbhd} same appraiser neighborhood, −${S.same_subdivision} same subdivision.</p>
+    <div class="table-scroll"><table class="acc">
+      <thead><tr><th>Comp</th>${keys.map((k) => `<th class="num">${SIM_LABELS[k]}</th>`).join("")}<th class="num">bonus</th><th class="num">penalty</th>
+        <th class="num">similarity</th><th class="num">gross adj.</th><th class="num">weight</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></details>`;
 }
 
 // ---------- how accurate is this? (backtest.json from pipeline/backtest.py) ----------

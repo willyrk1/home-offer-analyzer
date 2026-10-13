@@ -237,12 +237,18 @@
 
   /** Same as comps.calibrated_range: a range that held the sale price `level`% of the time in the backtest. */
   function calibratedRange(fair, low, high, zip, cal, level = "80") {
+    const p = calibratedRangeParts(fair, low, high, zip, cal, level);
+    return p && p.range;
+  }
+  /** The same range with its inputs, for showing the math: spread s, ZIP scale z, fitted a and k, half-width h. */
+  function calibratedRangeParts(fair, low, high, zip, cal, level = "80") {
     if (fair == null || low == null || !cal || !cal.levels[String(level)]) return null;
     const lv = cal.levels[String(level)];
     const s = Math.max((high - low) / 2 / fair, 0.005);
-    const z = zip in cal.zip_scale ? cal.zip_scale[zip] : cal.overall_scale;
+    const zipScaled = zip in cal.zip_scale;
+    const z = zipScaled ? cal.zip_scale[zip] : cal.overall_scale;
     const h = Math.sqrt((lv.a * z) ** 2 + (lv.k * s) ** 2);
-    return [fair * Math.exp(-h), fair * Math.exp(h)];
+    return { s, z, zipScaled, a: lv.a, k: lv.k, h, range: [fair * Math.exp(-h), fair * Math.exp(h)] };
   }
 
   // ---------- recent builder closings (pipeline/builder.py closings_low): context for the builder floor ----------
@@ -366,7 +372,7 @@
     };
   }
 
-  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, METHODS, calibratedRange, builderClosingsLow, looksNew, normalizeAddress, parseAddress, candidateZips, fromTable, design,
+  const api = { MIN_COMPS, MAX_COMPS, FEATURES, SUFFIX, METHODS, SIM, DISTRESSED_WEIGHT, SIZE_LIMIT, calibratedRange, calibratedRangeParts, builderClosingsLow, looksNew, normalizeAddress, parseAddress, candidateZips, fromTable, design,
     timeFactor, valueSubject, explain, haversine };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Comps = api;

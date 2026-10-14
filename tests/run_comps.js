@@ -25,4 +25,9 @@ console.log(JSON.stringify({ fair_value: r.fair_value, range: r.range, search: r
   methods: Object.fromEntries(Object.entries(r.methods).map(([k, v]) => [k, { fair_value: v.fair_value, range: v.range }])),
   comps: r.comps.map((c) => ({ parcel_id: c.parcel_id, adjusted_price: c.adjusted_price, weight: c.weight, local_factor: c.local_factor })),
   explain: extra && { verdict: extra.verdict, reasons: extra.reasons,
-    what_if: extra.whatIf ? extra.whatIf.fair_value : null } }));
+    what_if: extra.whatIf ? extra.whatIf.fair_value : null },
+  full: process.env.FULL ? { subject, as_of: r.as_of, search: r.search, pool_size: r.pool_size, methods: r.methods,
+    comps: r.comps.map(({ address, date, price, sale_class, zip, nbhd, subdivision, sqft, year_built, baths, lot_acres, pool, stories, quality,
+      distance_mi, similarity, sim_parts, time_factor, time_note, time_adjusted, adjustments, adjusted_price, net_pct, gross_pct, weight, just_value }) =>
+      ({ address, date, price, sale_class, zip, nbhd, subdivision, sqft, year_built, baths, lot_acres, pool, stories, quality, distance_mi, similarity,
+        sim_parts, time_factor, time_note, time_adjusted, adjustments, adjusted_price, net_pct, gross_pct, weight, just_value })) } : undefined }));

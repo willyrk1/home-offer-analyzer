@@ -43,7 +43,7 @@ jobs:
           IFS=';' read -ra ADDR <<< "$ADDRESSES"
           for a in "${ADDR[@]}"; do
             echo "== $a" >> comps-js.txt
-            node tests/run_comps.js site/data pasco "$a" >> comps-js.txt 2>&1 || true
+            FULL=1 ZIP_ONLY=1 node tests/run_comps.js site/data pasco "$a" >> comps-js.txt 2>&1 || true
           done
           cp comps-js.txt /tmp/ 2>/dev/null || true
 

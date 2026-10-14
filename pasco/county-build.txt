@@ -2,38 +2,44 @@
   return ogr_read(
 /opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: organizePolygons() received an unexpected geometry.  Either a polygon with interior rings, or a polygon with less than 4 points, or a non-Polygon geometry.  Return arguments as a collection.
   return ogr_read(
-/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 181696 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 181685 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
   return ogr_read(
-/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 308338 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 308313 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
   return ogr_read(
-/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 312723 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
+/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/pyogrio/raw.py:200: RuntimeWarning: Geometry of polygon of fid 312697 cannot be translated to Simple Geometry. All polygons will be contained in a multipolygon.
   return ogr_read(
 {
  "county": "pasco",
- "parcels_residential": 221984,
- "parcels_with_location": 221773,
+ "parcels_residential": 224365,
+ "parcels_with_location": 224153,
  "gis_error": null,
- "parcels_with_address": 211404,
+ "parcels_with_address": 213762,
  "property_types": {
-  "single_family": 185770,
-  "townhome": 23749,
-  "condo": 12465
+  "single_family": 187594,
+  "townhome": 24305,
+  "condo": 12466
  },
  "sales_since_2016_by_class": {
-  "non_market": 160855,
-  "market": 153412,
-  "distressed": 10974
+  "non_market": 161105,
+  "market": 153644,
+  "distressed": 10982
  },
- "residential_sales_used": 139945,
- "latest_sale": "2026-09-29",
- "market_sales_last_90_days": 2293
+ "residential_sales_used": 140178,
+ "latest_sale": "2026-10-07",
+ "market_sales_last_90_days": 2303,
+ "builder_floor_check": {
+  "n": 1058,
+  "sales_from": "2024-10-08",
+  "at_or_above_pct": 85.4442,
+  "median_above_pct": 7.4106
+ }
 }
-model: 20734 sales, R2 0.807, median abs error 10.2%
-  Size (log sq ft)             +0.6084  (se 0.0107)
-  Age (per year)               -0.0082  (se 0.0002)
-  Built within 2 years         +0.0011  (se 0.0102)
-  Lot (log acres)              +0.1180  (se 0.0039)
-  Bathrooms (each)             +0.0529  (se 0.0048)
-  Pool                         +0.1345  (se 0.0051)
-  Two-story                    -0.0437  (se 0.0062)
-  Quality grade (per step)     +0.1129  (se 0.0049)
+model: 20775 sales, R2 0.807, median abs error 10.2%
+  Size (log sq ft)             +0.6040  (se 0.0107)
+  Age (per year)               -0.0081  (se 0.0002)
+  Built within 2 years         -0.0043  (se 0.0102)
+  Lot (log acres)              +0.1199  (se 0.0039)
+  Bathrooms (each)             +0.0536  (se 0.0048)
+  Pool                         +0.1344  (se 0.0051)
+  Two-story                    -0.0444  (se 0.0062)
+  Quality grade (per step)     +0.1116  (se 0.0049)

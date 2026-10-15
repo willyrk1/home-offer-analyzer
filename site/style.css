@@ -225,3 +225,21 @@ a.link:hover { text-decoration: underline; }
   .eqs dd.total { border-top: 0; padding-top: 0; }
   .mathpage .detail { padding: 12px 14px; }
 }
+
+/* ---- drill down (drill.html) ---- */
+.drillpage #out > .drill { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.drill .what { color: var(--muted); font-size: 13px; }
+.drill .eq { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 14px; font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere; line-height: 1.9; }
+.drillpage #out > .drill > .dline .eq { font-size: 17px; }
+.drill .eq b { color: var(--accent); }
+.drill .kids > .drill { margin: 6px 0 4px 4px; padding: 4px 0 4px 12px; border-left: 2px solid var(--line); }
+.drill button.num { font: inherit; color: var(--accent); background: none; border: 0; border-bottom: 1px solid var(--accent);
+  border-radius: 0; padding: 0 1px; font-weight: 600; cursor: pointer; }
+.drill button.num.leaf { color: var(--ink); font-weight: 400; border-bottom: 1px dotted var(--muted); }
+.drill button.num[aria-expanded="true"] { background: var(--accent); color: var(--panel); border-radius: 3px; }
+.drill .src { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--muted); font-size: 13px; }
+@media (max-width: 600px) {
+  .drill .kids > .drill { margin-left: 0; padding-left: 8px; }
+  .drill .eq { font-size: 13px; }
+}

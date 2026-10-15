@@ -28,7 +28,8 @@ browser
   site/app.js               market pages
   site/comps.js + value.js  comps engine runs client-side on the exported county files
   site/county.js            shared loading + settings-in-the-link for value.js and math.js (math.html:
-                            every number behind the value; same settings -> same result)
+                            every number behind the value; drill.html: the same as a click-to-expand
+                            equation tree; same settings -> same result)
 ```
 
 No server. `site/data/` is generated (gitignored); `data/archive/` (Zillow forecast

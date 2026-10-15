@@ -386,7 +386,8 @@ function breakdownHtml(r, method, cal, range) {
     <details class="accuracy breakdown" id="breakdown" ${state.showBreakdown ? "open" : ""}>
       <summary><h3>How we got ${money(m.fair_value)}</h3> <span>every step, from recorded sales to the fair value and range</span></summary>
       ${find}${adjust}${weights}${avg}${methodSteps}${rangeStep}
-      <p><a href="math.html${esc(link())}">Every number behind ${money(m.fair_value)}, comp by comp →</a></p>
+      <p><a href="drill.html${esc(link())}">Drill into ${money(m.fair_value)}: click any number to see how it was made →</a><br>
+        <a href="math.html${esc(link())}">Every number on one page, comp by comp →</a></p>
       <p class="explain">Amounts are rounded to the dollar, so a column can be $1 off its total. Sources: Pasco County Property Appraiser
         sales through ${esc(asOfDate())}${uploadedSales().length ? " plus your Redfin file" : ""}; Zillow ZHVI by ZIP through ${esc(lastIndexMonth(s.zip))}.</p>
     </details>`;

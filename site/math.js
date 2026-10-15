@@ -28,28 +28,14 @@ const settings = County.decodeSettings(location.hash);
 async function main() {
   const back = "value.html" + (settings.a ? County.encodeSettings({ ...settings, focus: null }) : "");
   $("#back").href = back; $("#nav-value").href = back;
+  $("#to-drill").href = "drill.html" + County.encodeSettings({ ...settings, focus: null });
   if (!settings.a) {
     $("#status").innerHTML = `Pick a home on the <a href="value.html">value page</a>, then follow "Every number" from there.`;
     return;
   }
-  let common;
-  try { common = await County.loadCommon(); }
-  catch { $("#status").textContent = "County data isn't published yet. The weekly build creates it."; return; }
-  const found = await County.findSubject(settings.a, common);
-  if (!found.subject) { $("#status").textContent = `No Pasco parcel matches "${settings.a}".`; return; }
-
-  const subject = found.subject;
-  const uploaded = County.readUploaded();
-  const added = (uploaded && uploaded.added) || [];
-  const sales = (await County.loadSales(subject.zip, common)).concat(added);
-  const asOf = County.asOf(common.meta, added);
-  const local = settings.time === "nbhd" && common.nbhdTrend ? common.nbhdTrend.nbhds : null;
-  const opts = { includeDistressed: settings.includeDistressed, excluded: settings.excluded,
-    forced: County.findForced(settings.forced, sales), asOf, local };
-  const r = Comps.valueSubject(subject, sales, common.model, common.tindex, opts);
-  const method = County.pickMethod(r, settings.method, common.backtest);
-  const { cal, level } = County.calibration(common.backtest, method, settings.level);
-  const ctx = { ...common, subject, sales, added, uploaded, asOf, local, opts, r, method, cal, level };
+  const ctx = await County.valueFromLink(settings);
+  if (ctx.error) { $("#status").textContent = ctx.error; return; }
+  const { r, subject } = ctx;
 
   $("#status").textContent = "";
   if (!r.comps.length || r.fair_value == null) { $("#out").innerHTML = card("No comps", `<p class="explain">No qualifying sales were found for this home.</p>`); return; }
@@ -137,7 +123,7 @@ function zhviStep(ctx, c) {
 function describeDiff(a, s, c, asOf) {
   switch (a.feature) {
     case "ln_sqft": return `${num(s.sqft)} vs ${num(c.sqft)} sq ft`;
-    case "age": return `built ${s.year_built} vs ${c.year_built}, ages taken ${esc(asOf)} vs ${esc(c.date)}`;
+    case "age": return `built ${s.year_built} vs ${c.year_built}; this house's age as of ${esc(asOf)}, the comp's in its sale year`;
     case "new": return a.difference > 0 ? "this house is new" : "comp is new";
     case "ln_lot": return `${s.lot_acres} vs ${c.lot_acres} ac`;
     case "baths": return `${s.baths} vs ${c.baths} baths`;

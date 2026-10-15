@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drill Down · Home Offer Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <nav class="nav"><a href="index.html">Market trends</a><a href="value.html" id="nav-value">Value a home</a></nav>
+      <h1 id="title">Drill down</h1>
+      <p class="sub">The fair value as one equation. Click any number to see how it was made, down to the recorded data.</p>
+    </div>
+  </header>
+
+  <main class="wrap drillpage">
+    <p class="back"><a href="value.html" id="back">← Back to the value page</a> · <a href="math.html" id="to-math">every step on one page</a></p>
+    <p id="status" class="explain" role="status">Loading county data…</p>
+    <div id="out"></div>
+  </main>
+
+  <footer class="wrap foot">
+    <p id="sources"></p>
+    <p>Not an appraisal or financial advice. Condition, upgrades and views aren't in the data; use your own judgment on those.</p>
+  </footer>
+
+  <script src="comps.js"></script>
+  <script src="county.js"></script>
+  <script src="drill.js"></script>
+</body>
+</html>

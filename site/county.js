@@ -117,8 +117,30 @@
     return d;
   }
 
+  /** Value the home a link describes, exactly as the value page does. Returns the context the
+      math pages print from, or {error} with a plain-language message. */
+  async function valueFromLink(settings) {
+    let common;
+    try { common = await loadCommon(); }
+    catch { return { error: "County data isn't published yet. The weekly build creates it." }; }
+    const found = await findSubject(settings.a, common);
+    if (!found.subject) return { error: `No Pasco parcel matches "${settings.a}".` };
+    const subject = found.subject;
+    const uploaded = readUploaded();
+    const added = (uploaded && uploaded.added) || [];
+    const sales = (await loadSales(subject.zip, common)).concat(added);
+    const date = asOf(common.meta, added);
+    const local = settings.time === "nbhd" && common.nbhdTrend ? common.nbhdTrend.nbhds : null;
+    const opts = { includeDistressed: settings.includeDistressed, excluded: settings.excluded,
+      forced: findForced(settings.forced, sales), asOf: date, local };
+    const r = root.Comps.valueSubject(subject, sales, common.model, common.tindex, opts);
+    const method = pickMethod(r, settings.method, common.backtest);
+    const { cal, level } = calibration(common.backtest, method, settings.level);
+    return { ...common, subject, sales, added, uploaded, asOf: date, local, opts, r, method, cal, level };
+  }
+
   const api = { COUNTY, BASE, UPLOAD_KEY, DEFAULTS, encodeSettings, decodeSettings, findForced, bestMethod, pickMethod, calibration,
-    getJSON, loadCommon, findSubject, loadSales, readUploaded, asOf };
+    getJSON, loadCommon, findSubject, loadSales, readUploaded, asOf, valueFromLink };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.County = api;
 })(typeof self !== "undefined" ? self : this);

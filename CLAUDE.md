@@ -27,6 +27,8 @@ weekly GitHub Action (.github/workflows/weekly.yml, Mondays)
 browser
   site/app.js               market pages
   site/comps.js + value.js  comps engine runs client-side on the exported county files
+  site/county.js            shared loading + settings-in-the-link for value.js and math.js (math.html:
+                            every number behind the value; same settings -> same result)
 ```
 
 No server. `site/data/` is generated (gitignored); `data/archive/` (Zillow forecast
@@ -36,7 +38,7 @@ snapshots for future backtests) is committed by the workflow and can't be recrea
 
 ```bash
 pip install -r requirements.txt          # geopandas/pyogrio needed for the parcel map
-python -m pytest -q                      # 53 tests (~1-2 min); JS tests need node
+python -m pytest -q                      # 57 tests (~2 min); JS tests need node
 python -m pipeline.build                 # market data (downloads ~few hundred MB)
 python -m pipeline.county_build          # Pasco (downloads ~800 MB incl. 684 MB map; ~10 min)
 python -m pipeline.county_build --offline --raw-dir raw/pasco   # reuse downloads

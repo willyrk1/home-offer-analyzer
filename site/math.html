@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Every Number · Home Offer Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap">
+      <nav class="nav"><a href="index.html">Market trends</a><a href="value.html" id="nav-value">Value a home</a></nav>
+      <h1>Every number</h1>
+      <p class="sub">The arithmetic behind a fair value on the value page, from each recorded sale to the final range. Same data, same settings, same result.</p>
+    </div>
+  </header>
+
+  <main class="wrap mathpage">
+    <p class="back"><a href="value.html" id="back">← Back to the value page</a></p>
+    <p id="status" class="explain" role="status">Loading county data…</p>
+    <div id="out"></div>
+  </main>
+
+  <footer class="wrap foot">
+    <p id="sources"></p>
+    <p>Not an appraisal or financial advice. Condition, upgrades and views aren't in the data; use your own judgment on those.</p>
+  </footer>
+
+  <script src="comps.js"></script>
+  <script src="county.js"></script>
+  <script src="math.js"></script>
+</body>
+</html>

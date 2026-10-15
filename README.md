@@ -26,7 +26,8 @@ A free, static web site that values listed homes from closed-sale comps and sugg
 - **Sale classification:** the appraiser's qualified flag and state codes. Market sales count fully; bank-owned, foreclosure-deed, short and bankruptcy sales count at half weight; family, related-party, multi-parcel and other non-market transfers are excluded (with the reason shown).
 - **County model:** a regression on the last two years of market sales gives the value of size, age, lot, baths, pool, stories and quality grade (`pipeline/valuation.py`).
 - **Comps:** nearest similar sales, widening the radius and then the time window until there are at least 6; each is time-adjusted with the ZIP home value index and feature-adjusted with the county model, then weighted by similarity and adjustment size (`pipeline/comps.py`, mirrored in `site/comps.js`; a test keeps the two identical).
-- **On the page:** show-the-math for each comp, remove a comp, include or exclude distressed sales, and "why wasn't this sale used?" with a what-if and an option to add it anyway.
+- **On the page:** a step-by-step breakdown of the fair value, remove a comp, include or exclude distressed sales, and "why wasn't this sale used?" with a what-if and an option to add it anyway.
+- **Every number** (`site/math.html`): the full arithmetic behind the value, comp by comp. It opens from the value page with the same settings (carried in the link), so it always lands on the same number.
 
 `python -m pipeline.comps_report "<address>"` prints the same analysis as text, and the **Comps report** workflow runs it on the real data.
 

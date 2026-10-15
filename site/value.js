@@ -1,10 +1,8 @@
 "use strict";
 
-const COUNTY = "pasco";
-const BASE = `data/counties/${COUNTY}/`;
+const { COUNTY, getJSON, loadCommon, findSubject, loadSales } = County;     // site/county.js, shared with math.js
 const $ = (s) => document.querySelector(s);
-const cache = new Map();
-const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showMath: false, showBreakdown: false, explain: null, method: null, level: "80" };
+const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced: [] }, showBreakdown: false, explain: null, method: null, level: "80" };
 // Time adjustment: the ZIP's Zillow index alone, or plus the neighborhood's own trend vs that index
 // (pipeline/comps.neighborhood_trends). Default = the backtest winner: the ZIP index alone (the
 // neighborhood trend didn't lower the miss at any strength; CLAUDE.md, "Neighborhood trend").
@@ -22,44 +20,9 @@ const money = (v) => v == null ? "—" : "$" + Math.round(v).toLocaleString("en-
 const pct = (v, d = 1) => v == null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(d)}%`;
 const type = (t) => String(t || "").replace("_", " ");
 
-async function getJSON(path) {
-  if (!cache.has(path)) {
-    cache.set(path, fetch(BASE + path).then((r) => { if (!r.ok) throw new Error(`${path}: ${r.status}`); return r.json(); }));
-  }
-  return cache.get(path);
-}
-
-async function loadCommon() {
-  const [meta, model, tindex, streets, neighbors] = await Promise.all(
-    ["meta.json", "model.json", "tindex.json", "streets.json", "neighbors.json"].map(getJSON));
-  const [backtest, nbhdTrend] = await Promise.all(["backtest.json", "nbhd_trend.json"]
-    .map((f) => getJSON(f).catch(() => null)));                         // optional
-  return { meta, model, tindex, streets, neighbors, backtest, nbhdTrend };
-}
-
-async function findSubject(text, common) {
-  const parsed = Comps.parseAddress(text);
-  const zips = Comps.candidateZips(parsed, common.streets).filter((z) => common.meta.zips.includes(z));
-  for (const z of zips) {
-    const parcels = Comps.fromTable(await getJSON(`parcels/${z}.json`));
-    const hit = parcels.find((p) => p.address_key === parsed.key);
-    if (hit) return { subject: hit };
-    if (z === zips[zips.length - 1]) {
-      const num = parsed.key.split(" ")[0];
-      return { similar: parcels.filter((p) => p.address_key.startsWith(num + " ")).slice(0, 5).map((p) => p.address) };
-    }
-  }
-  return { similar: [], noStreet: true };
-}
-
-async function loadSales(zip, common) {
-  const zips = common.neighbors[zip] || [zip];
-  const tables = await Promise.all(zips.map((z) => getJSON(`sales/${z}.json`).catch(() => null)));
-  return tables.filter(Boolean).flatMap(Comps.fromTable);
-}
-
 // ---------- run ----------
-async function run(addressText) {
+/** settings: from the link (County.decodeSettings) when the page opens; otherwise a fresh start for this home. */
+async function run(addressText, settings = null) {
   $("#status").textContent = "Loading county data…";
   let common;
   try { common = await loadCommon(); }
@@ -78,12 +41,17 @@ async function run(addressText) {
     getJSON(`../../zips/${found.subject.zip}.json`).catch(() => null)]);
   state.ctx = { ...common, subject: found.subject, sales, market };
   state.opts = { includeDistressed: true, excluded: [], forced: [] };
+  if (settings) {
+    Object.assign(state, { method: settings.method, level: settings.level, time: settings.time });
+    state.opts = { includeDistressed: settings.includeDistressed, excluded: settings.excluded.slice(),
+      forced: County.findForced(settings.forced, allSales()) };
+  }
   state.explain = null;
   state.builder = false; state.builderOwned = false;                  // per home: off by default
   state.trendGroup = null;                                            // per home: pick the best-supported group
   Object.assign(offerIn, { dom: "", lot: "", cpsf: "", carry: "", months: "" });
   $("#status").textContent = "";
-  history.replaceState(null, "", `#a=${encodeURIComponent(addressText)}`);
+  state.address = addressText;
   remember(found.subject);
   render();
 }
@@ -99,16 +67,12 @@ function engineOpts() {
 }
 
 // ---------- your Redfin "recently sold" file (site/upload.js): this browser only, never published ----------
-const UPLOAD_KEY = "hoa:redfin:" + COUNTY;
-let uploaded = (() => { try { return JSON.parse(localStorage.getItem(UPLOAD_KEY)); } catch { return null; } })();
+const UPLOAD_KEY = County.UPLOAD_KEY;
+let uploaded = County.readUploaded();
 const uploadedSales = () => (uploaded && uploaded.added) || [];
 const allSales = () => state.ctx.sales.concat(uploadedSales());
 /** "As of" = the newest market sale, county-recorded or from your file (CLAUDE.md invariant 2). */
-function asOfDate() {
-  let d = state.ctx ? state.ctx.meta.latest_sale : null;
-  for (const s of uploadedSales()) if (!d || s.date > d) d = s.date;
-  return d;
-}
+function asOfDate() { return County.asOf(state.ctx && state.ctx.meta, uploadedSales()); }
 
 async function addRedfinFile(file) {
   const common = await loadCommon();
@@ -177,8 +141,15 @@ function modelNote(c) {
 }
 
 // ---------- render ----------
+/** This page's settings as a link: the same home, method, range and comps. focus = a comp to jump to on math.html. */
+function link(focus = null) {
+  return County.encodeSettings({ a: state.address, method: state.method, level: state.level, time: state.time,
+    includeDistressed: state.opts.includeDistressed, excluded: state.opts.excluded, forced: state.opts.forced, focus });
+}
+
 function render() {
   const r = compute();
+  history.replaceState(null, "", link());
   const s = r.subject;
   const list = parseFloat(($("#list").value || "").replace(/[^\d.]/g, "")) || null;
   const box = $("#result");
@@ -191,7 +162,6 @@ function render() {
   const cal = calibration(method);
   const range = (cal && Comps.calibratedRange(fair, m.range && m.range[0], m.range && m.range[1], s.zip, cal, state.level)) || m.range;
   const vsList = list && fair ? (list / fair - 1) * 100 : null;
-  state.ctx.lastAssessedUsed = r.methods.assessed.used || null;
   const searchText = `${r.comps.filter((c) => !c.forced).length} comps ${esc(r.search.area)}, sold in the last ${r.search.months} months` +
     (r.search.located ? "" : " (no map location, matched by area)") + (r.search.thin ? " — few sales nearby, so the search had to reach far" : "");
 
@@ -225,7 +195,6 @@ function render() {
 
       <div class="controls">
         <label><input type="checkbox" id="opt-distressed" ${state.opts.includeDistressed ? "checked" : ""}> Include distressed sales (bank-owned, short sales) at half weight</label>
-        <label><input type="checkbox" id="opt-math" ${state.showMath ? "checked" : ""}> Show the math for every comp</label>
       </div>
       ${timeHtml(s)}
 
@@ -234,7 +203,7 @@ function render() {
         <table class="comps">
           <thead><tr><th>Address</th><th>Sold</th><th class="num">Price</th><th class="num">Distance</th><th class="num">Sq ft</th>
             <th class="num">Built</th><th class="num">Baths</th><th>Pool</th><th class="num">Adjusted</th><th class="num">Weight</th><th></th></tr></thead>
-          <tbody>${r.comps.map((c, i) => compRow(c, i)).join("")}</tbody>
+          <tbody>${r.comps.map(compRow).join("")}</tbody>
         </table>
       </div>
       ${state.opts.excluded.length ? `<p class="explain">Removed by you: ${state.opts.excluded.map((id) =>
@@ -258,12 +227,7 @@ function render() {
   box.querySelectorAll("[data-level]").forEach((b) => b.onclick = () => { state.level = b.dataset.level; render(); });
   box.querySelectorAll("input[name=method]").forEach((el) => el.onchange = () => { state.method = el.value; render(); });
   $("#opt-distressed").onchange = (e) => { state.opts.includeDistressed = e.target.checked; render(); };
-  $("#opt-math").onchange = (e) => { state.showMath = e.target.checked; render(); };
   box.querySelectorAll("input[name=time]").forEach((el) => el.onchange = () => { state.time = el.value; render(); });
-  box.querySelectorAll("[data-toggle]").forEach((b) => b.onclick = () => {
-    const row = box.querySelector(`#math-${b.dataset.toggle}`); row.hidden = !row.hidden;
-    b.textContent = row.hidden ? "math" : "hide";
-  });
   box.querySelectorAll("[data-remove]").forEach((b) => b.onclick = () => {
     const id = b.dataset.remove;
     state.opts.forced = state.opts.forced.filter((f) => f.parcel_id !== id);
@@ -292,13 +256,8 @@ function methodStats(method) {
   if (method === "comps" && bt.overall.valued) return { view: bt, from: bt.sales_from, to: bt.sales_to };
   return null;
 }
-const bestMethod = () => (state.ctx.backtest && state.ctx.backtest.methods && state.ctx.backtest.methods.best) || "comps";
-
-/** The method you picked, else the backtest's most accurate, else comps (when a method can't value this home). */
-function chosenMethod(r) {
-  for (const m of [state.method, bestMethod(), "comps"]) if (m && r.methods[m] && r.methods[m].fair_value != null) return m;
-  return "comps";
-}
+const bestMethod = () => County.bestMethod(state.ctx.backtest);
+const chosenMethod = (r) => County.pickMethod(r, state.method, state.ctx.backtest);
 
 function methodPicker(r, method) {
   const best = bestMethod();
@@ -364,7 +323,7 @@ function breakdownHtml(r, method, cal, range) {
   const adjust = step(++n, "Bring each sale to today and adjust it to this house", `<p class="explain">Time: each price × the change in
     ${state.time === "nbhd" && state.ctx.nbhdTrend ? "the comp ZIP's Zillow home value index and its neighborhood's trend" : "the comp ZIP's Zillow home value index"}
     from the month it sold to the latest month. Features: for each difference, × e<sup>coef × difference</sup>, with coefficients fitted on
-    ${model.n_sales.toLocaleString()} Pasco market sales: ${coefs}. Each comp's line-by-line math is under "math" in the comps table.</p>
+    ${model.n_sales.toLocaleString()} Pasco market sales: ${coefs}. <a href="math.html${esc(link())}">Every number, comp by comp</a>.</p>
     <div class="table-scroll"><table class="acc">
       <thead><tr><th>Comp</th><th class="num">Sold for</th><th class="num">Time</th><th class="num">Today</th><th class="num">Features</th>
         <th class="num">Adjusted</th><th class="num">Weight</th><th class="num">Share</th><th class="num">Counts for</th></tr></thead>
@@ -427,6 +386,7 @@ function breakdownHtml(r, method, cal, range) {
     <details class="accuracy breakdown" id="breakdown" ${state.showBreakdown ? "open" : ""}>
       <summary><h3>How we got ${money(m.fair_value)}</h3> <span>every step, from recorded sales to the fair value and range</span></summary>
       ${find}${adjust}${weights}${avg}${methodSteps}${rangeStep}
+      <p><a href="math.html${esc(link())}">Every number behind ${money(m.fair_value)}, comp by comp →</a></p>
       <p class="explain">Amounts are rounded to the dollar, so a column can be $1 off its total. Sources: Pasco County Property Appraiser
         sales through ${esc(asOfDate())}${uploadedSales().length ? " plus your Redfin file" : ""}; Zillow ZHVI by ZIP through ${esc(lastIndexMonth(s.zip))}.</p>
     </details>`;
@@ -461,10 +421,9 @@ function similarityHtml(r) {
 
 // ---------- how accurate is this? (backtest.json from pipeline/backtest.py) ----------
 function calibration(method) {
-  const bt = state.ctx.backtest;
-  const cal = bt && bt.methods && bt.methods.ranges && bt.methods.ranges[method];
-  if (cal && !cal.levels[state.level]) state.level = Object.keys(cal.levels).includes("80") ? "80" : Object.keys(cal.levels)[0];
-  return cal || null;
+  const c = County.calibration(state.ctx.backtest, method, state.level);
+  state.level = c.level;
+  return c.cal;
 }
 
 function rangeNote(cal) {
@@ -763,23 +722,8 @@ function addressOf(parcelId) {
   return s ? s.address : parcelId;
 }
 
-function compRow(c, i) {
+function compRow(c) {
   const flags = c.flags.length ? `<div class="flags">${c.flags.map(esc).join(" · ")}</div>` : "";
-  const math = `
-    <tr id="math-${i}" class="math" ${state.showMath ? "" : "hidden"}><td colspan="11">
-      <table class="mathtable">
-        <tr><td>Sale price (${esc(c.date)}, ${esc(c.sale_class)})</td><td></td><td class="num">${money(c.price)}</td></tr>
-        ${c.local_factor !== 1 ? `<tr><td>Time: ZIP ${esc(c.zip)} index ${esc(c.time_note)}</td><td class="num">×${(c.time_factor / c.local_factor).toFixed(3)}</td><td class="num">${money(c.price * c.time_factor / c.local_factor)}</td></tr>
-        <tr><td>Time: neighborhood ${esc(c.nbhd)} trend vs the ZIP, ${pct(trendPct(c.nbhd))}/yr</td><td class="num">×${c.local_factor.toFixed(3)}</td><td class="num">${money(c.time_adjusted)}</td></tr>`
-        : `<tr><td>Time: ZIP ${esc(c.zip)} index ${esc(c.time_note)}</td><td class="num">×${c.time_factor.toFixed(3)}</td><td class="num">${money(c.time_adjusted)}</td></tr>`}
-        ${c.just_value ? `<tr><td>Appraiser ratio: ${money(c.time_adjusted)} ÷ appraiser value ${money(c.just_value)}${
-          state.ctx.lastAssessedUsed && !state.ctx.lastAssessedUsed.includes(c.parcel_id) ? " (not used: far from the other comps' ratios)" : ""}</td>
-          <td class="num">${(c.time_adjusted / c.just_value).toFixed(3)}</td><td></td></tr>` : ""}
-        ${c.adjustments.map((a) => `<tr><td>${esc(a.label)}: ${describeDiff(a, c)}</td>
-          <td class="num">${pct(a.pct)}</td><td class="num">${a.dollars >= 0 ? "+" : "−"}${money(Math.abs(a.dollars))}</td></tr>`).join("")}
-        <tr class="total"><td>Adjusted price (net ${pct(c.net_pct)}, gross ${c.gross_pct.toFixed(1)}%)</td><td></td><td class="num">${money(c.adjusted_price)}</td></tr>
-        <tr><td colspan="3" class="explain">Weight ${c.weight.toFixed(2)} = similarity ${c.similarity.toFixed(2)} ÷ (1 + ${(c.gross_pct / 100).toFixed(3)} gross)${c.sale_class === "distressed" ? " × 0.5 distressed" : ""}</td></tr>
-      </table></td></tr>`;
   return `<tr class="comp">
       <td class="addr" data-label="">${esc(c.address)}${c.subdivision === state.ctx.subject.subdivision ? ' <span class="tag-sm">same subdivision</span>' : ""}${
         c.source === "redfin_upload" ? ` <span class="tag-sm">from your Redfin file</span>${c.note ? `<div class="flags">${esc(c.note)}</div>` : ""}` : ""}${flags}</td>
@@ -787,24 +731,9 @@ function compRow(c, i) {
       <td class="num" data-label="Distance">${c.distance_mi.toFixed(2)} mi</td><td class="num" data-label="Sq ft">${Math.round(c.sqft).toLocaleString()}</td>
       <td class="num" data-label="Built">${c.year_built ?? "—"}</td><td class="num" data-label="Baths">${c.baths ?? "—"}</td><td data-label="Pool">${c.pool ? "yes" : "no"}</td>
       <td class="num strong" data-label="Adjusted">${money(c.adjusted_price)}</td><td class="num" data-label="Weight">${c.weight.toFixed(2)}</td>
-      <td class="actions"><button class="link" data-toggle="${i}">${state.showMath ? "hide" : "math"}</button>
+      <td class="actions"><a class="link" href="math.html${esc(link(c.parcel_id))}">math</a>
         <button class="link" data-remove="${esc(c.parcel_id)}" ${c.forced ? 'data-forced="1"' : ""} title="Remove this comp" aria-label="Remove ${esc(c.address)}">✕</button></td>
-    </tr>${math}`;
-}
-
-function describeDiff(a, c) {
-  const s = state.ctx.subject;
-  switch (a.feature) {
-    case "ln_sqft": return `${Math.round(s.sqft)} vs ${Math.round(c.sqft)} sq ft`;
-    case "age": return `built ${s.year_built} vs ${c.year_built}`;
-    case "new": return a.difference > 0 ? "subject is new" : "comp is new";
-    case "ln_lot": return `lot ${s.lot_acres} vs ${c.lot_acres} ac`;
-    case "baths": return `${s.baths} vs ${c.baths} baths`;
-    case "pool": return a.difference > 0 ? "subject has a pool" : "comp has a pool";
-    case "two_story": return a.difference > 0 ? "subject is two-story" : "comp is two-story";
-    case "quality": return `quality grade ${s.quality} vs ${c.quality}`;
-    default: return "";
-  }
+    </tr>`;
 }
 
 function runExplain(text, r) {
@@ -959,7 +888,7 @@ $("#list").addEventListener("input", () => {
   const s = state.ctx.subject;
   saveRecents(recents().map((r) => (r.id === s.parcel_id ? { ...r, list: $("#list").value.trim() } : r)));
 });
-const fromHash = decodeURIComponent((location.hash.match(/a=([^&]+)/) || [])[1] || "");
+const fromHash = County.decodeSettings(location.hash);
 const last = recents()[0];
-if (fromHash) { addrInput.value = fromHash; run(fromHash); }
+if (fromHash.a) { addrInput.value = fromHash.a; run(fromHash.a, fromHash); }
 else if (last) { addrInput.value = last.value; addrInput.defaultValue = last.value; if (last.list) $("#list").value = last.list; }

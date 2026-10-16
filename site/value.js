@@ -8,10 +8,10 @@ const state = { ctx: null, opts: { includeDistressed: true, excluded: [], forced
 // neighborhood trend didn't lower the miss at any strength; CLAUDE.md, "Neighborhood trend").
 const TIME_DEFAULT = "zip";
 state.time = TIME_DEFAULT;
-const METHOD_NAMES = { comps: "Adjusted comps", assessed: "Appraiser ratio", blend: "Blend of both" };
+const METHOD_NAMES = { comps: "Adjusted comps", assessed: "Just-value ratio", blend: "Blend of both" };
 const METHOD_DESC = {
   comps: "nearby sales, each adjusted for every difference from this house",
-  assessed: "this house's appraiser value × what the comps sold for compared with theirs",
+  assessed: "this house's just value × what the comps sold for compared with theirs",
   blend: "the average of the two",
 };
 
@@ -179,8 +179,8 @@ function render() {
           <div class="note">${pct(vsList)} vs fair value${range && list > range[1] ? " · above the range" : range && list < range[0] ? " · below the range" : ""}</div></div>` : ""}
         <div class="tile"><div class="label">The house</div><div class="value small">${Math.round(s.sqft).toLocaleString()} sq ft</div>
           <div class="note">${esc(type(s.property_type))}, built ${s.year_built}, ${s.baths ?? "—"} baths, ${s.stories >= 2 ? "two-story" : "one-story"}, lot ${s.lot_acres ?? "—"} ac, ${s.pool ? "pool" : "no pool"}</div></div>
-        <div class="tile"><div class="label">Appraiser's just value</div><div class="value small">${money(s.just_value)}</div>
-          <div class="note">for tax purposes; usually below market</div></div>
+        <div class="tile"><div class="label">Just value</div><div class="value small">${money(s.just_value)}</div>
+          <div class="note">Pasco appraiser: the county's market estimate as of Jan 1, not the capped value on the tax bill; homes usually sell ~15% above it</div></div>
       </div>
       ${methodPicker(r, method)}
       <p class="explain">${searchText}. Each sale is brought to today's prices with ${state.time === "nbhd" && state.ctx.nbhdTrend ? "the ZIP's home value index and its neighborhood's trend" : "the ZIP's home value index"}, then adjusted for every difference using values fitted on Pasco sales. Closer matches and smaller adjustments count more.${assessedText(r, method)}</p>
@@ -275,9 +275,9 @@ function methodPicker(r, method) {
 function assessedText(r, method) {
   const a = r.methods.assessed;
   if (method === "comps" || a.fair_value == null) return "";
-  return ` <strong>Appraiser ratio:</strong> after the time adjustment, the comps sold for ${a.ratio.toFixed(3)}× their appraiser
-    just values on average (weighted by similarity), so ${money(a.just_value)} × ${a.ratio.toFixed(3)} = ${money(a.fair_value)}.
-    The appraiser's value already reflects size, age, lot and location, so no feature adjustments are applied.`;
+  return ` <strong>Just-value ratio:</strong> after the time adjustment, the comps sold for ${a.ratio.toFixed(3)}× their
+    just values (the county's Jan 1 market estimates) on average (weighted by similarity), so ${money(a.just_value)} × ${a.ratio.toFixed(3)} = ${money(a.fair_value)}.
+    The just value already reflects size, age, lot and location, so no feature adjustments are applied.`;
 }
 
 // ---------- how we got the fair value: every step from sales to the number in the hero tile ----------
@@ -351,7 +351,7 @@ function breakdownHtml(r, method, cal, range) {
         <td class="num">${money(c.just_value)}</td><td class="num">${f3(c.time_adjusted / c.just_value)}</td>
         <td class="num">${on ? aw(c).toFixed(3) : "—"}</td><td class="num">${on ? (aw(c) / AW * 100).toFixed(1) + "%" : "—"}</td></tr>`;
     }).join("");
-    methodSteps += step(++n, "Appraiser ratio", `<p class="explain">For each comp, today's price ÷ its appraiser just value; ratios more than
+    methodSteps += step(++n, "Just-value ratio", `<p class="explain">For each comp, today's price ÷ its just value; ratios more than
       1.5× from the median are dropped. Weighted by similarity${comps.some((c) => c.sale_class === "distressed") ? ` (× ${Comps.DISTRESSED_WEIGHT} distressed)` : ""}
       — no gross-adjustment penalty, since nothing is adjusted.</p>
       <div class="table-scroll"><table class="acc">
@@ -362,7 +362,7 @@ function breakdownHtml(r, method, cal, range) {
         (±${money((a.range[1] - a.range[0]) / 2)} spread across the comps).</p>`);
   }
   if (method === "blend") {
-    methodSteps += step(++n, "Blend", `<p class="explain">(${money(comp)} adjusted comps + ${money(a.fair_value)} appraiser ratio) ÷ 2
+    methodSteps += step(++n, "Blend", `<p class="explain">(${money(comp)} adjusted comps + ${money(a.fair_value)} just-value ratio) ÷ 2
       = <b>${money(m.fair_value)}</b>. Spread: the average of the two, ±${money((m.range[1] - m.range[0]) / 2)}.</p>`);
   }
 

@@ -105,7 +105,7 @@
         <td class="num">${w.ppsf == null ? "—" : "$" + Math.round(w.ppsf)}</td><td class="num">${w.ratio == null ? "—" : w.ratio.toFixed(3)}</td></tr>`).join("")}</tbody>
     </table></div>
     <p class="explain">${o.source || "Pasco Property Appraiser sales (market sales only)"} through ${esc(tr.as_of)}.
-      Price ÷ just value compares each sale with that house's current appraiser value, so it follows prices for the same homes whatever mix sold;
+      Price ÷ just value compares each sale with that house's current just value (the appraiser's market estimate), so it follows prices for the same homes whatever mix sold;
       $/sf moves with the mix. Medians of a handful of sales jump around; faded rows have fewer than 5.
       Listings aren't published by neighborhood, so price cuts and inventory stay ZIP-level.</p>`;
   }

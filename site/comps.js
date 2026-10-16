@@ -219,13 +219,13 @@
     const jv = num(subject.just_value, NaN), sqft = num(subject.sqft, NaN);
     const none = (reason) => ({ fair_value: null, range: null, reason });
     const usable = comps.filter((c) => isNum(c.just_value) && c.just_value > 0);
-    if (!(jv > 0) || usable.length < JV_MIN_COMPS) return none("not enough comps with an appraiser value");
+    if (!(jv > 0) || usable.length < JV_MIN_COMPS) return none("not enough comps with a just value");
     const ratio = (c) => c.time_adjusted / c.just_value;
     const med = middle(usable.map(ratio));
     const kept = usable.filter((c) => med / JV_RATIO_BAND <= ratio(c) && ratio(c) <= med * JV_RATIO_BAND);
     if (kept.length < JV_MIN_COMPS) return none("comps' ratios disagree too much");
     const jvPsf = middle(kept.map((c) => c.just_value / c.sqft));
-    if (sqft > 0 && jv / sqft < JV_SUBJECT_MIN * jvPsf) return none("the appraiser value looks partial (new or changed since January 1)");
+    if (sqft > 0 && jv / sqft < JV_SUBJECT_MIN * jvPsf) return none("the just value looks partial (new or changed since January 1)");
     const w = kept.map((c) => c.similarity * (c.sale_class === "distressed" ? DISTRESSED_WEIGHT : 1));
     const W = w.reduce((a, b) => a + b, 0);
     if (!W) return none("no weight");

@@ -41,7 +41,7 @@ def render(r: dict) -> str:
         f"  {s['property_type']}, {s['sqft']:.0f} sq ft, built {s['year_built']:.0f}, "
         f"{s['baths']} baths, {s['stories']} stories, lot {s['lot_acres']} ac, pool: {s['pool']}, "
         f"quality {s['quality']}, neighborhood {s['nbhd']} ({s['nbhd_name']})",
-        f"  appraiser just value: {money(s['just_value'])}",
+        f"  just value (county market estimate, Jan 1): {money(s['just_value'])}",
         "",
         f"FAIR VALUE  {money(r['fair_value'])}   range {money(r['range'][0])} – {money(r['range'][1])}"
         if r["fair_value"] else "FAIR VALUE  (no comps found)",
@@ -51,7 +51,7 @@ def render(r: dict) -> str:
         "  methods: " + "; ".join(
             f"{k} {money(v['fair_value'])}" if v["fair_value"] else f"{k} n/a ({v.get('reason')})"
             for k, v in r["methods"].items())
-        + (f"  [appraiser ratio {r['methods']['assessed']['ratio']:.3f} x just value]"
+        + (f"  [just-value ratio {r['methods']['assessed']['ratio']:.3f} x just value]"
            if r["methods"]["assessed"]["fair_value"] else ""),
         f"  county model: {r['model']['n_sales']} sales {r['model']['window'][0]}..{r['model']['window'][1]}, "
         f"R2 {r['model']['r2']:.3f}, median abs error {r['model']['median_abs_pct_error']:.1f}%",

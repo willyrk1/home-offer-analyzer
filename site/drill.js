@@ -11,7 +11,7 @@ const num = (v) => Math.round(v).toLocaleString("en-US");
 const monthName = (ym) => new Date(ym + "-01T00:00:00Z").toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 const DAY = 86400000;
-const METHOD_NAMES = { comps: "adjusted comps", assessed: "appraiser ratio", blend: "blend of both" };
+const METHOD_NAMES = { comps: "adjusted comps", assessed: "just-value ratio", blend: "blend of both" };
 
 // ---------- numbers ----------
 /** A number made from others: what it is, the equation (strings and numbers), and its value as shown. */
@@ -136,21 +136,21 @@ function build(ctx) {
   const compsValue = calc(money(m.comps.fair_value), "adjusted comps value: the comps' adjusted prices, weighted", [
     calc(money(WP), "sum of weight × adjusted price", plus(prods)), " ÷ ", calc(x(W), "sum of the weights", plus(nodes.map((n) => n.weight)))]);
 
-  // appraiser ratio
+  // just-value ratio
   let assessedValue = null;
   if (m.assessed.fair_value != null) {
     const used = new Set(m.assessed.used), kept = nodes.filter((n) => used.has(n.c.parcel_id));
     const dropped = nodes.length - kept.length;
     const aw = (n) => (n.distressed.length ? calc(x(n.c.similarity * Comps.DISTRESSED_WEIGHT), `${n.name}: weight`, [n.sim, ...n.distressed]) : n.sim);
-    const ratio = (n) => calc(x(n.c.time_adjusted / n.c.just_value), `${n.name}: today's price ÷ its appraiser just value`, [n.today, " ÷ ",
-      data(money(n.c.just_value), `${n.name}: appraiser just value`, "Pasco County Property Appraiser, as of January 1")]);
+    const ratio = (n) => calc(x(n.c.time_adjusted / n.c.just_value), `${n.name}: today's price ÷ its just value`, [n.today, " ÷ ",
+      data(money(n.c.just_value), `${n.name}: just value`, "Pasco County Property Appraiser: the county's market estimate as of Jan 1, not the capped value on the tax bill")]);
     const WR = sum(kept.map((n) => (n.c.similarity * (n.distressed.length ? Comps.DISTRESSED_WEIGHT : 1)) * n.c.time_adjusted / n.c.just_value));
     const AW = sum(kept.map((n) => n.c.similarity * (n.distressed.length ? Comps.DISTRESSED_WEIGHT : 1)));
     const wr = kept.map((n) => calc(x(n.c.similarity * (n.distressed.length ? Comps.DISTRESSED_WEIGHT : 1) * n.c.time_adjusted / n.c.just_value), `${n.name}: weight × ratio`, [aw(n), " × ", ratio(n)]));
     const ratioNode = calc(x(m.assessed.ratio, 6), `the comps' price ÷ just value, weighted by similarity${dropped ? ` (${dropped} dropped: more than 1.5× from the median)` : ""}`, [
       calc(x(WR), "sum of weight × ratio", plus(wr)), " ÷ ", calc(x(AW), "sum of the weights", plus(kept.map(aw)))]);
-    assessedValue = calc(money(m.assessed.fair_value), "appraiser-ratio value", [
-      data(money(s.just_value), "this house: appraiser just value", "Pasco County Property Appraiser, as of January 1"), " × ", ratioNode]);
+    assessedValue = calc(money(m.assessed.fair_value), "just-value ratio value", [
+      data(money(s.just_value), "this house: just value", "Pasco County Property Appraiser: the county's market estimate as of Jan 1, not the capped value on the tax bill"), " × ", ratioNode]);
   }
 
   const name = METHOD_NAMES[ctx.method];

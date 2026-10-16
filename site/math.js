@@ -13,7 +13,7 @@ const num = (v) => Math.round(v).toLocaleString("en-US");
 const monthName = (ym) => ym ? new Date(ym + "-01T00:00:00Z").toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : "";
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 const DAY = 86400000;
-const METHOD_NAMES = { comps: "Adjusted comps", assessed: "Appraiser ratio", blend: "Blend of both" };
+const METHOD_NAMES = { comps: "Adjusted comps", assessed: "Just-value ratio", blend: "Blend of both" };
 
 /** One row of a step: label, then the equation. kind: "sub" (indented) or "total" (ruled, bold). */
 const row = (label, eq, kind = "") => `<dt class="${kind}">${label}</dt><dd class="${kind}">${eq}</dd>`;
@@ -202,7 +202,7 @@ function compsValueCard(ctx) {
 
 function assessedCard(ctx) {
   const a = ctx.r.methods.assessed, comps = ctx.r.comps;
-  if (a.fair_value == null) return card("4. Appraiser-ratio value", `<p class="explain">Not available for this home: ${esc(a.reason || "no appraiser values")}.</p>`);
+  if (a.fair_value == null) return card("4. Just-value ratio value", `<p class="explain">Not available for this home: ${esc(a.reason || "no just values")}.</p>`);
   const used = new Set(a.used);
   const withJV = comps.filter((c) => c.just_value);
   const ratios = withJV.map((c) => c.time_adjusted / c.just_value).sort((p, q) => p - q);
@@ -211,7 +211,7 @@ function assessedCard(ctx) {
   const kept = comps.filter((c) => used.has(c.parcel_id));
   const W = sum(kept.map(w)), WR = sum(kept.map((c) => w(c) * c.time_adjusted / c.just_value));
   const SS = sum(kept.map((c) => w(c) * (a.just_value * c.time_adjusted / c.just_value - a.fair_value) ** 2));
-  return card("4. Appraiser-ratio value" + unused(ctx, "assessed"), eqs([
+  return card("4. Just-value ratio value" + unused(ctx, "assessed"), eqs([
     ...withJV.map((c) => row(esc(c.address), `${money(c.time_adjusted)} today ÷ ${money(c.just_value)} just value = ${x(c.time_adjusted / c.just_value)}${used.has(c.parcel_id)
       ? ` · weight ${x(w(c))}` : ` <span class="thin">(dropped: outside the band)</span>`}`, "sub")),
     row("Band", `median ${x(med)} ÷ 1.5 to × 1.5 = ${x(med / 1.5)} – ${x(med * 1.5)}`),

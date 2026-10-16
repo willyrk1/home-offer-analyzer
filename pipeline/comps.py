@@ -10,8 +10,9 @@ Steps (matching the project spec):
 
 Three ways to turn the comps into a value (all returned under "methods"):
   comps     step 5 above
-  assessed  each comp's time-adjusted price / its appraiser just value gives a
-            market-to-assessment ratio; the subject's just value x the weighted
+  assessed  "just-value ratio" on the site: each comp's time-adjusted price / its
+            just value (the appraiser's Jan 1 market estimate, not the capped
+            assessed value) gives a market-to-just-value ratio; the subject's just value x the weighted
             ratio. The appraiser's model sees land and location detail we don't.
   blend     the average of the two
 """
@@ -192,7 +193,7 @@ def assessed_value(subject: pd.Series, comps: list[dict]) -> dict:
     jv, sqft = _f(subject.get("just_value")), _f(subject.get("sqft"))
     usable = [c for c in comps if c["just_value"] is not None and c["just_value"] > 0]
     if not (jv > 0) or len(usable) < JV_MIN_COMPS:
-        return {"fair_value": None, "range": None, "reason": "not enough comps with an appraiser value"}
+        return {"fair_value": None, "range": None, "reason": "not enough comps with a just value"}
     med = _median([c["time_adjusted"] / c["just_value"] for c in usable])
     kept = [c for c in usable if med / JV_RATIO_BAND <= c["time_adjusted"] / c["just_value"] <= med * JV_RATIO_BAND]
     if len(kept) < JV_MIN_COMPS:
@@ -200,7 +201,7 @@ def assessed_value(subject: pd.Series, comps: list[dict]) -> dict:
     jv_psf = _median([c["just_value"] / c["sqft"] for c in kept])
     if sqft > 0 and jv / sqft < JV_SUBJECT_MIN * jv_psf:
         return {"fair_value": None, "range": None,
-                "reason": "the appraiser value looks partial (new or changed since January 1)"}
+                "reason": "the just value looks partial (new or changed since January 1)"}
     w = np.array([c["similarity"] * (DISTRESSED_WEIGHT if c["sale_class"] == "distressed" else 1.0) for c in kept])
     r = np.array([c["time_adjusted"] / c["just_value"] for c in kept])
     if w.sum() == 0:

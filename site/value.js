@@ -162,6 +162,7 @@ function render() {
   const cal = calibration(method);
   const range = (cal && Comps.calibratedRange(fair, m.range && m.range[0], m.range && m.range[1], s.zip, cal, state.level)) || m.range;
   const vsList = list && fair ? (list / fair - 1) * 100 : null;
+  const psf = (v) => (v && s.sqft > 0 ? `$${Math.round(v / s.sqft).toLocaleString("en-US")}/sq ft` : "—");
   const searchText = `${r.comps.filter((c) => !c.forced).length} comps ${esc(r.search.area)}, sold in the last ${r.search.months} months` +
     (r.search.located ? "" : " (no map location, matched by area)") + (r.search.thin ? " — few sales nearby, so the search had to reach far" : "");
 
@@ -175,8 +176,8 @@ function render() {
           <div class="note">${cal ? `${state.level}% range` : "range"} ${range ? money(range[0]) + " – " + money(range[1]) : "—"}${rangeNote(cal)}</div>
           ${cal ? `<div class="levels" role="group" aria-label="Range width">${Object.keys(cal.levels).map((lv) =>
             `<button type="button" class="link${lv === state.level ? " on" : ""}" data-level="${lv}" aria-pressed="${lv === state.level}">${lv}%</button>`).join("")}</div>` : ""}</div>
-        ${list ? `<div class="tile"><div class="label">List price</div><div class="value ${vsList > 0 ? "up-seller" : "up-buyer"}">${money(list)}</div>
-          <div class="note">${pct(vsList)} vs fair value${range && list > range[1] ? " · above the range" : range && list < range[0] ? " · below the range" : ""}</div></div>` : ""}
+        ${list ? `<div class="tile"><div class="label">List price · you entered</div><div class="value ${vsList > 0 ? "up-seller" : "up-buyer"}">${money(list)}</div>
+          <div class="note">${psf(list)} · fair value ${psf(fair)} (heated sq ft)<br>${pct(vsList)} vs fair value${range && list > range[1] ? " · above the range" : range && list < range[0] ? " · below the range" : ""}</div></div>` : ""}
         <div class="tile"><div class="label">The house</div><div class="value small">${Math.round(s.sqft).toLocaleString()} sq ft</div>
           <div class="note">${esc(type(s.property_type))}, built ${s.year_built}, ${s.baths ?? "—"} baths, ${s.stories >= 2 ? "two-story" : "one-story"}, lot ${s.lot_acres ?? "—"} ac, ${s.pool ? "pool" : "no pool"}</div></div>
         <div class="tile"><div class="label">Just value</div><div class="value small">${money(s.just_value)}</div>

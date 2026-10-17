@@ -863,7 +863,10 @@ addrInput.addEventListener("focus", () => {
   const mine = suggestions("");
   if (mine.length) showList(mine);
 });
-addrInput.addEventListener("input", () => { clearTimeout(ac.timer); ac.timer = setTimeout(refresh, 60); });
+addrInput.addEventListener("input", () => {
+  $("#list").value = "";                   // a new address's list price isn't the old one's (recents restore theirs)
+  clearTimeout(ac.timer); ac.timer = setTimeout(refresh, 60);
+});
 addrInput.addEventListener("blur", () => setTimeout(closeList, 150));
 addrInput.addEventListener("keydown", (e) => {
   if (addrList.hidden) {

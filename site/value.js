@@ -177,7 +177,7 @@ function render() {
           ${cal ? `<div class="levels" role="group" aria-label="Range width">${Object.keys(cal.levels).map((lv) =>
             `<button type="button" class="link${lv === state.level ? " on" : ""}" data-level="${lv}" aria-pressed="${lv === state.level}">${lv}%</button>`).join("")}</div>` : ""}</div>
         ${list ? `<div class="tile"><div class="label">List price · you entered</div><div class="value ${vsList > 0 ? "up-seller" : "up-buyer"}">${money(list)}</div>
-          <div class="note">${psf(list)} · fair value ${psf(fair)} (heated sq ft)<br>${pct(vsList)} vs fair value${range && list > range[1] ? " · above the range" : range && list < range[0] ? " · below the range" : ""}</div></div>` : ""}
+          <div class="note">list ${psf(list)}<br>fair value ${psf(fair)}<br>(per heated sq ft)<br>${pct(vsList)} vs fair value${range && list > range[1] ? " · above the range" : range && list < range[0] ? " · below the range" : ""}</div></div>` : ""}
         <div class="tile"><div class="label">The house</div><div class="value small">${Math.round(s.sqft).toLocaleString()} sq ft</div>
           <div class="note">${esc(type(s.property_type))}, built ${s.year_built}, ${s.baths ?? "—"} baths, ${s.stories >= 2 ? "two-story" : "one-story"}, lot ${s.lot_acres ?? "—"} ac, ${s.pool ? "pool" : "no pool"}</div></div>
         <div class="tile"><div class="label">Just value</div><div class="value small">${money(s.just_value)}</div>
